@@ -1,0 +1,19 @@
+{
+	"Author": "Upi Bhalla",
+	"Description": "Feedforward inhibition",
+	"Comment": "Conc units are milliMolar, time units are seconds",
+	"Groups": {
+		"input_g": {
+			"Species": {"input": 0.0 }
+		},
+		"output_g": {
+			"Species": {"mol1": 1.0, "mol2": 1.0 },
+			"Reacs": {
+				"output": {"subs": ["input","temp2"],
+					"KA": 1, "tau":1.0 },
+				"temp2": {"subs": ["mol2","input"],
+					"KA": 0.5, "tau":2.0, "inhibit": 1 }
+			}
+		}
+	}
+}

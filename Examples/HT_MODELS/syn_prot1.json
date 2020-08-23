@@ -1,0 +1,76 @@
+{
+    "Comment": "Conc units are uM, time units are seconds", 
+    "quantityUnits": "uM", 
+    "Description": "Synaptic activity-driven protein synthesis", 
+    "Groups": {
+        "MAPK_g": {
+            "Species": {
+                "MAPK": 1.0, 
+                "BDNF": 5e-05
+            }, 
+            "Reacs": {
+                "fbMAPK": {
+                    "tau": 300.0, 
+                    "KA": 0.2582, 
+                    "inhibit": 1, 
+                    "subs": [
+                        "MAPK", 
+                        "aMAPK"
+                    ]
+                }, 
+                "aMAPK": {
+                    "tau2": 1587.0, 
+                    "tau": 86.3, 
+                    "KA": 0.0009255, 
+                    "baseline": 0.1716, 
+                    "subs": [
+                        "fbMAPK", 
+                        "BDNF", 
+                        "BDNF"
+                    ]
+                }
+            }
+        }, 
+        "CaMKIII": {
+            "Species": {
+                "Ca": 0.08, 
+                "CaMKIII": 1.0
+            }, 
+            "Reacs": {
+                "aCaMKIII": {
+                    "tau2": 45.65, 
+                    "tau": 9.979, 
+                    "KA": 0.2265, 
+                    "baseline": 0.04948, 
+                    "subs": [
+                        "CaMKIII", 
+                        "Ca", 
+                        "Ca", 
+                        "Ca", 
+                        "Ca"
+                    ]
+                }
+            }
+        }, 
+        "protein_g": {
+            "Species": {
+                "prot": 8.077e-06
+            }, 
+            "Reacs": {
+                "protein": {
+                    "tau": 92.6, 
+                    "KA": 0.2875, 
+                    "inhibit": 1, 
+                    "baseline": 1.038e-07, 
+                    "subs": [
+                        "prot", 
+                        "aMAPK", 
+                        "aCaMKIII", 
+                        "aCaMKIII"
+                    ]
+                }
+            }
+        }
+    }, 
+    "Author": "Upi Bhalla, mapping to model by Jan and Bhalla 2009"
+}

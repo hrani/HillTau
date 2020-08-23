@@ -1,0 +1,16 @@
+{
+	"Author": "Upi Bhalla",
+	"Description": "Excitation model",
+	"Comment": "Conc units are milliMolar, time units are seconds",
+	"Groups": {
+		"input_g": {
+			"Species": {"input": 0.0 }
+		},
+		"output_g": {
+			"Reacs": {
+				"output": {"subs": ["input"],
+					"KA": 1, "tau":1.0 }
+			}
+		}
+	}
+}

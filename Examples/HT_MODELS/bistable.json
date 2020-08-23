@@ -1,0 +1,16 @@
+{
+	"Author": "Upi Bhalla",
+	"Description": "Bistable",
+	"Comment": "Conc units are milliMolar, time units are seconds",
+	"Groups": {
+		"output_g": {
+			"Species": {"output": 0.0, "mol": 1.0, "fb": 0.01 },
+			"Reacs": {
+				"output": {"subs": ["mol","fb", "fb"],
+					"KA": 0.2, "tau":1, "baseline": 0.03 },
+				"fb": {"subs": ["output", "output"],
+					"KA": 0.4, "tau":1 }
+			}
+		}
+	}
+}

@@ -1,0 +1,23 @@
+{
+    "Comment": "Conc units are milliMolar, time units are seconds", 
+    "Description": "Feedback inhibition", 
+    "Groups": {
+        "input_g": {
+            "Species": { "input": 0.0 }
+        }, 
+        "output_g": {
+            "Species": { "mol": 1.0 }, 
+            "Reacs": {
+                "output": {
+                    "tau2": 8.512, "tau": 1.5, "KA": 0.0009764, "inhibit": 1, 
+                    "subs": [ "input", "fb", "fb" ]
+                }, 
+                "fb": {
+                    "tau": 47.05, "KA": 0.09769, 
+                    "subs": [ "mol", "output" ]
+                }
+            }
+        }
+    }, 
+    "Author": "Upi Bhalla"
+}
