@@ -399,12 +399,12 @@ def sortReacs( model ):
         model.sortedReacInfo[order].append( reac )
 
 def main():
-    parser = argparse.ArgumentParser( description = 'hillTau simulator\n'
+    parser = argparse.ArgumentParser( description = 'This is the hillTau simulator.\n'
     'This program simulates abstract kinetic/neural models defined in the\n'
     'HillTau formalism. HillTau is an event-driven JSON form to represent\n'
     'dynamics of mass-action chemistry and neuronal activity in a fast, \n'
     'reduced form. The hillTau program loads and checks HillTau models,\n'
-    'and optionally does rudimentary stimulus specification and plotting\n')
+    'and optionally does simple stimulus specification and plotting\n')
     parser.add_argument( 'model', type = str, help='Required: filename of model, in JSON format.')
     parser.add_argument( '-r', '--runtime', type = float, help='Optional: Run time for model, in seconds. If flag is not set the model is not run and there is no display', default = 0.0 )
     parser.add_argument( '-s', '--stimulus', type = str, nargs = '+', action='append', help='Optional: Deliver stimulus as follows: --stimulus molecule conc [start [stop]]. Any number of stimuli may be given, each indicated by --stimulus. By default: start = 0, stop = runtime', default = [] )
