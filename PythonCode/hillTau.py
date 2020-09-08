@@ -459,19 +459,21 @@ def main():
     else: 
         clPlots = [ i for i in model.molInfo ]
 
+    qu = jsonDict.get( "quantityUnits" )
+    if qu:
+        ylabel = 'Conc ({})'.format( qu )
+        qs = lookupQuantityScale[qu]
+    else:
+        ylabel = 'Conc (mM)'
+        qs = 1
+
     for name in clPlots:
         mi = model.molInfo[name]
         i = mi.index
-        plt.plot( x, plotvec[i], label = name )
-
-    '''
-    for name, mi in model.molInfo.items():
-        i = mi.index
-        plt.plot( x, plotvec[i], label = mi.name )
-    '''
+        plt.plot( x, plotvec[i]/qs, label = name )
 
     plt.xlabel('Time (s)')
-    plt.ylabel('Conc (uM)')
+    plt.ylabel(ylabel)
     plt.title( args.model )
     plt.legend()
     plt.show()

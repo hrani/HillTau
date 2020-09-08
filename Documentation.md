@@ -1,3 +1,4 @@
+![alt text](./Images/HillTau_Logo4_360px.png?raw=true "HillTau logo")
 # Documentation for HillTau
 
 HillTau has two major usage modes: as a standalone simulator, and as a

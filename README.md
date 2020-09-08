@@ -1,3 +1,5 @@
+![alt text](./Images/HillTau_Logo4_360px.png?raw=true "HillTau logo")
+
 # HillTau
 Sparse, efficient, non-ODE approximation for biochemical signaling
 

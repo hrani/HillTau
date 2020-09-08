@@ -1,3 +1,5 @@
+![alt text](./Images/HillTau_Logo4_360px.png?raw=true "HillTau logo")
+
 # Resources for HillTau
 
 The HillTau reference paper will shortly be out. Please cite the reference
