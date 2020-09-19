@@ -283,7 +283,11 @@ def scaleDict( jsonDict, qs ):
                 sp[m] = float( SIGSTR.format( sp[m] * qs ) )
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
-                reac["KA"] = float( SIGSTR.format( reac["KA"] * qs ) )
+                # Check if it is a single substrate reac
+                if len( reac["subs"] ) == 1:
+                    reac["KA"] = float( SIGSTR.format( reac["KA"] ) )
+                else:
+                    reac["KA"] = float( SIGSTR.format( reac["KA"] * qs ) )
                 reac["tau"] = float( SIGSTR.format( reac["tau"] ) )
                 tau2 = reac.get( "tau2" )
                 if tau2:
@@ -411,7 +415,8 @@ def main():
     parser.add_argument( '-p', '--plots', type = str, help='Optional: plot just the specified molecule(s). The names are specified by a comma-separated list.', default = "" )
     args = parser.parse_args()
     jsonDict = loadHillTau( args.model )
-    scaleDict( jsonDict, getQuantityScale( jsonDict ) )
+    qs = getQuantityScale( jsonDict )
+    scaleDict( jsonDict, qs )
     model = parseModel( jsonDict )
 
     runtime = args.runtime
@@ -428,7 +433,7 @@ def main():
         if len( i ) < 2:
             print( "Warning: need at least 2 args for stimulus, got {i}".format( i ) )
             continue
-        i[1] = float( i[1] )
+        i[1] = float( i[1] ) * qs # Assume stim units same as model units.
         if len(i) == 2:
             i.extend( [0.0, runtime] )
         if len(i) == 3:
@@ -446,7 +451,6 @@ def main():
     for s in stimvec:
         model.advance( s.time - currTime )
         model.conc[s.mol.index] = s.value
-        #print( "STIM: ", s.name, s.value )
         currTime = s.time
     if runtime > currTime:
         model.advance( runtime - currTime )

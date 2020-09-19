@@ -52,6 +52,7 @@ Go into the Examples directory and type:
 	python ../PythonCode/hillTau.py HT_MODELS/osc.json -r 5000
 
 ![alt text](./Images/osc.png?raw=true "Oscillatory model")
+
 This runs the oscillatory model with runtime 5000 seconds, and plots it.
 
 ### Selecting only a subset of plots
@@ -68,24 +69,32 @@ This runs the oscillatory model with runtime 5000 seconds, and plots it.
 ![alt text](./Images/singleStim_exc.png?raw=true "Apply single stimulus")
 
 Here we assign molecule 'input' to value 1 uM at time 5 seconds, and
-the stimulus turns off at 10 seconds.
+the stimulus turns off at 10 seconds. This is shown in the blue plot.
 Note that the units of the model are the default millimolar, so the
 stimulus must also be in the same units.
 
 ### Giving multiple stimuli
 
-	python ../PythonCode/hillTau.py HT_MODELS/bcm_bistable.json -r 100 -s Ca 2 10 11 -s Ca 0.3 50 80
+	python ../PythonCode/hillTau.py HT_MODELS/bcm_bistable.json -r 100 -s Ca 2 10 11 -s Ca 0.3 50 80 -p Ca,synAMPAR,on_CaMKII
 ![alt text](./Images/doubleStim_synapse.png?raw=true "Apply double stimulus")
 
-Here we give a brief strong Ca stimulus to turn on the bistable, and a long,
-low Ca stimulus to turn it off again.
+This model has a bistable mediated by CaMKII feedback, which is triggered by
+a Ca input. There is also a Ca-activated phosphatase CaN which acts to 
+inhibit and hence turn off the activity of the CaMKII. Thus the Ca input 
+both excites the CaMKII, and via CaN, inhibits it. These two counteracting
+processes act at different speeds and concentrations.
 
+Here we give a brief strong Ca stimulus to turn on the bistable, and a long,
+low Ca stimulus to turn it off again. The CaMKII in turn activates the
+synaptic AMPA receptor (synAMPAR) as a readout of synaptic weight. Note that 
+the model units are in uM (micromolar), and so the stimulus units are 
+handled also in uM.
 
 
 ## Use of HillTau as a library
 
 HillTau is a Python script, so there are a lot of functions you can access
-if you want. Only four are needed or recommended:
+if you want. Only a few are needed or recommended:
 
 1. loadHillTau( filename )
 
