@@ -17,7 +17,7 @@ PythonCode: The code to run HillTau.
 [Documentation for HillTau](Documentation.md)
 
 ## Installation
-Copy the two files hillTau.py and hillTauSchema.py from PythonCode to your
+Copy the two files hillTau.py and hillTauSchema.json from PythonCode to your
 target directory.
 
 ## Versions
@@ -28,8 +28,14 @@ Examples: Directory with examples
 
 Examples/HT_MODELS: Examples of HillTau models
 
-Examples/KKIT_MODELS: Examples of KKIT models which map to the HillTau ones.o		KKIT models are an old ODE biochemical model format compatible with
+Examples/KKIT_MODELS: Examples of KKIT models which map to the HillTau ones.
+	KKIT models are an old ODE biochemical model format compatible with
 	GENESIS and MOOSE.
+
+Examples/SBML_MODELS: Examples of SBML models which map to the HillTau ones.
+	SBML is the Systems Biology Markup Language and is a standard for defining
+	many kinds of systems biology models, including the current mass-action
+	ones.
 
 Examples/PaperFigures: Using the HillTau form to generate the figures for the
 	reference paper for HillTau. Most of these require MOOSE to be 
