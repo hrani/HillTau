@@ -17,7 +17,7 @@
 
 '''
 *******************************************************************
- * File:            fig3.py
+ * File:            fig3_supp_rev_bcm.py
  * Description:
  * Author:          Upinder S. Bhalla
  * E-mail:          bhalla@ncbs.res.in
@@ -25,8 +25,7 @@
 
 /**********************************************************************
 ** This program uses HILLTAU and MOOSE to compare model definitions
-** specifically related to synaptic computations like the BCM curve.
-**
+** in the two formalisms.
 **           copyright (C) 2020 Upinder S. Bhalla. and NCBS
 **********************************************************************/
 '''
@@ -42,7 +41,7 @@ import moose
 import hillTau
 
 plotDt = 0.1
-char = ['A','A', 'B', 'C', 'D', 'E', 'E', 'F', 'G', 'H','I', 'J']
+char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','I', 'J']
 
 def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = 'Time (s)', ylabel = 'Conc ($\mu$M)' ):
     # Hack to put in full-row panel E
@@ -70,9 +69,9 @@ def ts( chem, ht, ampl, plotPos, title = '' ):
     tpost = 50
     modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
     Ca = moose.element( '/model/kinetics/Ca' )
-    output = moose.element( '/model/kinetics/p_AMPAR' )
+    output = moose.element( '/model/kinetics/synAMPAR' )
     iplot = moose.element( '/model/graphs/conc1/Ca.Co' )
-    oplot = moose.element( '/model/graphs/conc1/p_AMPAR.Co' )
+    oplot = moose.element( '/model/graphs/conc2/synAMPAR.Co' )
     moose.setClock( iplot.tick, plotDt )
     for i in range( 10, 20 ):
         moose.setClock( i, plotDt )
@@ -114,36 +113,6 @@ def ts( chem, ht, ampl, plotPos, title = '' ):
     #ax.plot( x , 1000 * plotvec[inputMolIndex], label = "input" )
     ax.plot( x , 1000 * plotvec[outputMolIndex][int(tsettle/plotDt):], label = "output" )
 
-def bisBCM( ht, plotPos ):
-    ltpAmpl = 2
-    ltdAmpl = 0.3
-    jsonDict = hillTau.loadHillTau( ht )
-    qs =  hillTau.getQuantityScale( jsonDict )
-    hillTau.scaleDict( jsonDict, qs )
-    model = hillTau.parseModel( jsonDict )
-    model.dt = plotDt
-    inputMolIndex = model.molInfo.get( "Ca" ).index
-    outputMolIndex = model.molInfo.get( "synAMPAR" ).index
-    model.reinit()
-
-    origConc = model.conc[inputMolIndex]
-    model.advance( 20 )
-    model.conc[inputMolIndex] = ltpAmpl * qs
-    model.advance( 1 )
-    model.conc[inputMolIndex] = origConc
-    model.advance( 29 )
-    model.conc[inputMolIndex] = ltdAmpl * qs
-    model.advance( 30 )
-    model.conc[inputMolIndex] = origConc
-    model.advance( 20 )
-
-    plotvec = np.transpose( np.array( model.plotvec ) )
-    x = np.array( range( plotvec.shape[1] ) ) * plotDt
-    reacn = "ht"
-    ax = plotBoilerplate( char[plotPos], plotPos, "synSwitch", xlabel = "Time (s)", ylabel = "[synAMPAR] ($\mu$M)" )
-    ax.plot( x , plotvec[inputMolIndex] / qs, label = "Ca" )
-    ax.plot( x , plotvec[outputMolIndex] / qs, label = "synAMPAR" )
-
 def doseResp( model, xIndex, yIndex ):
     model.dt = plotDt
     x = []
@@ -161,7 +130,7 @@ def doseRespMoose():
     y = []
     tsettle = 200
     Ca = moose.element( '/model/kinetics/Ca' )
-    output = moose.element( '/model/kinetics/p_AMPAR' )
+    output = moose.element( '/model/kinetics/synAMPAR' )
     for i in range( 10, 20 ):
         moose.setClock( i, plotDt )
     moose.reinit()
@@ -200,10 +169,9 @@ def runDoser( kkit, ht, plotPos, title = "" ):
 def main():
     fig = plt.figure( figsize = (6,9), facecolor='white' )
     fig.subplots_adjust( left = 0.18 )
-    ts( "KKIT_MODELS/bcm.g", "HT_MODELS/bcm.json", 0.5e-3, 3, title = "0.5 $\mu$M Ca stim" )
-    ts( "KKIT_MODELS/bcm.g", "HT_MODELS/bcm.json", 5.0e-3, 4, title = "5 $\mu$M Ca stim" )
-    runDoser( "KKIT_MODELS/bcm.g", "HT_MODELS/bcm.json", 5, title = "dose-response" )
-    bisBCM( "HT_MODELS/bcm_bistable.json", 8 )
+    ts( "KKIT_MODELS/reverse_bcm.g", "HT_MODELS/bcm.json", 0.5e-3, 3, title = "0.5 $\mu$M Ca stim" )
+    ts( "KKIT_MODELS/reverse_bcm.g", "HT_MODELS/bcm.json", 5.0e-3, 4, title = "5 $\mu$M Ca stim" )
+    runDoser( "KKIT_MODELS/reverse_bcm.g", "HT_MODELS/bcm.json", 5, title = "dose-response" )
 
     plt.tight_layout()
     plt.show()

@@ -46,9 +46,9 @@ def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = '' ):
     ax.set_xlabel( xlabel, fontsize = 14 )
 
     if panelTitle == "A":
-        ax.set_ylabel( 'Output (uM)', fontsize = 14 )
+        ax.set_ylabel( 'Output ($\mu$M)', fontsize = 14 )
     else:
-        ax.set_ylabel( 'Conc (uM)', fontsize = 14 )
+        ax.set_ylabel( 'Conc ($\mu$M)', fontsize = 14 )
     ax.text( -0.3, 1, panelTitle, fontsize = 18, weight = 'bold', transform = ax.transAxes )
     ax.text( 0.03, 1.03, reacn, fontsize = 12, transform = ax.transAxes )
     return ax
@@ -84,7 +84,7 @@ def plotPanelA( plotPos ):
     dx = 0.02
     x = np.arange( 0, 2, dx )
     y = x / (KA + x )
-    ax = plotBoilerplate( "A", 1, "", xlabel = "Input (uM)" )
+    ax = plotBoilerplate( "A", 1, "", xlabel = "Input ($\mu$M)" )
     ax.plot( x , y )
     ax.set_xlim( ax.get_xlim() )
     x1 = 1.0

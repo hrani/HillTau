@@ -52,9 +52,11 @@ def plotBoilerplate( plotPos, text ):
     ax.text( 0.03, 1.01, text, fontsize = 12, transform = ax.transAxes )
     return ax
 
-def runSim( chem, ht, plotPos ):
-    ax = plotBoilerplate( plotPos, chem[:-2] )
-    modelId = moose.loadModel( "KKIT_MODELS/" + chem, 'model', 'gsl' )[0]
+def runSim( fname, plotPos, text ):
+    ht = "HT_MODELS/" + fname + ".json"
+    chem = "KKIT_MODELS/" + fname + ".g"
+    ax = plotBoilerplate( plotPos, text )
+    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
     #moose.le( '/model/kinetics')
     for i in range( 10, 20 ):
         moose.setClock( i, plotDt )
@@ -74,37 +76,43 @@ def runSim( chem, ht, plotPos ):
     moose.start( post )
     ivec = iplot.vector
     ovec = oplot.vector
-    x = np.array( range( len( ivec )) ) * plotDt
-    ax.plot( x , 1000 * ivec, label = "input" )
-    ax.plot( x , 1000 * ovec, label = "output" )
+    xvec = np.array( range( len( ivec )) ) * plotDt
     moose.delete( '/model' )
 
-    jsonDict = hillTau.loadHillTau( "HT_MODELS/" + ht )
+    jsonDict = hillTau.loadHillTau( ht )
     hillTau.scaleDict( jsonDict, hillTau.getQuantityScale( jsonDict ) )
     model = hillTau.parseModel( jsonDict )
     inputMolIndex = model.molInfo.get( "input" ).index
     outputMolIndex = model.molInfo.get( "output" ).index
-    model.dt = plotDt * 10
+    model.dt = plotDt
     model.reinit()
     model.advance( pre )
     model.conc[inputMolIndex] = stimulusAmpl
-    #model.concInit[inputMolIndex] = 1e-3
     model.advance( stim )
     model.conc[inputMolIndex] = 0
-    #model.concInit[inputMolIndex] = 0
     model.advance( post )
     plotvec = np.transpose( np.array( model.plotvec ) )
     x = np.array( range( plotvec.shape[1] ) ) * model.dt
-    ax.plot( x , 1000 * plotvec[outputMolIndex], "mo", label = "output" )
+    ax.plot( xvec , 1000 * ivec, label = "input" )
+    ax.plot( x , 1000 * plotvec[outputMolIndex], label = "output" )
+    ax.plot( xvec , 1000 * ovec, "k:", label = "output" )
 
 def main():
-    kkitList = ["exc.g", "conv.g", "exc2ndOrder.g", "conv2ndOrder.g", "inh.g"]
-    htList = ["exc.json", "conv.json", "exc2ndOrder.json", "conv2ndOrder.json", "inh.json" ]
     fig = plt.figure( figsize = (6,9), facecolor='white' )
     fig.subplots_adjust( left = 0.18 )
 
+    runSim( "exc", 1, u"input + mol \u21cc output" )
+    runSim( "conv", 2, u"input \u21cc output" )
+    runSim( "exc2ndOrder", 3, u"2 input + mol \u21cc output" )
+    runSim( "conv2ndOrder", 4, u"2 input \u21cc output" )
+    runSim( "inh", 5, u"mol \u21cc input + output" )
+    '''
+    kkitList = ["exc.g", "conv.g", "exc2ndOrder.g", "conv2ndOrder.g", "inh.g"]
+    htList = ["exc.json", "conv.json", "exc2ndOrder.json", "conv2ndOrder.json", "inh.json" ]
+
     for j, k, h in zip( range( len( kkitList ) ), kkitList, htList ):
         runSim( k, h, j+1 )
+    '''
 
     plt.tight_layout()
     plt.show()

@@ -43,7 +43,7 @@
             "Species": { "BDNF": 5e-05 }, 
             "Reacs": {
                 "aBDNF": {
-                    "tau": 470.0, "KA": 0.82, 
+                    "tau": 470.0, "KA": 0.82e-3, 
                     "subs": [ "BDNF" ]
                 }
             }

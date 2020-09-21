@@ -2,6 +2,7 @@
 	"Author": "Upi Bhalla",
 	"Description": "Excitation model",
 	"Comment": "Conc units are milliMolar, time units are seconds",
+	"quantityUnits": "uM",
 	"Groups": {
 		"input_g": {
 			"Species": {"input": 0.0 }

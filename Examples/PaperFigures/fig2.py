@@ -47,7 +47,7 @@ i1 = 1e-3
 
 plotDt = 1
 
-def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = 'Time (s)', ylabel = 'Conc (uM)' ):
+def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = 'Time (s)', ylabel = 'Conc ($\mu$M)' ):
     ax = plt.subplot( 5, 2, plotPos )
     ax.spines['top'].set_visible( False )
     ax.spines['right'].set_visible( False )

@@ -3,47 +3,46 @@
     "quantityUnits": "uM", 
     "Description": "Synaptic activity-driven protein synthesis", 
     "Groups": {
-        "MAPK_g": {
+        "BDNF_g": {
             "Species": {
-                "MAPK": 1.0, 
-                "BDNF": 5e-05
+                "BDNF": 5e-05, 
+                "TrKB": 1.0
             }, 
             "Reacs": {
-                "fbMAPK": {
-                    "tau": 300.0, 
-                    "KA": 0.2582, 
-                    "inhibit": 1, 
+                "aTrKB": {
+                    "tau2": 1021.0, 
+                    "tau": 118.0, 
+                    "KA": 0.0007154, 
+                    "baseline": 0.07598, 
                     "subs": [
-                        "MAPK", 
-                        "aMAPK"
-                    ]
-                }, 
-                "aMAPK": {
-                    "tau2": 1587.0, 
-                    "tau": 86.3, 
-                    "KA": 0.0009255, 
-                    "baseline": 0.1716, 
-                    "subs": [
-                        "fbMAPK", 
+                        "fbTrKB", 
                         "BDNF", 
                         "BDNF"
+                    ]
+                }, 
+                "fbTrKB": {
+                    "tau": 300.0, 
+                    "KA": 0.328, 
+                    "inhibit": 1, 
+                    "subs": [
+                        "TrKB", 
+                        "aTrKB"
                     ]
                 }
             }
         }, 
-        "CaMKIII": {
+        "CaM": {
             "Species": {
                 "Ca": 0.08, 
-                "CaMKIII": 1.0
+                "CaM": 1.0
             }, 
             "Reacs": {
-                "aCaMKIII": {
-                    "tau2": 45.65, 
-                    "tau": 9.979, 
-                    "KA": 0.2265, 
-                    "baseline": 0.04948, 
+                "aCaM": {
+                    "tau2": 95.83, 
+                    "tau": 0.9909, 
+                    "KA": 0.1657, 
                     "subs": [
-                        "CaMKIII", 
+                        "CaM", 
                         "Ca", 
                         "Ca", 
                         "Ca", 
@@ -54,19 +53,27 @@
         }, 
         "protein_g": {
             "Species": {
-                "prot": 8.077e-06
+                "prot": 2.141e-05
             }, 
             "Reacs": {
                 "protein": {
-                    "tau": 92.6, 
-                    "KA": 0.2875, 
+                    "tau": 4.996, 
+                    "KA": 0.5167, 
+                    "subs": [
+                        "40Scomplex", 
+                        "aCaM", 
+                        "aCaM"
+                    ], 
                     "inhibit": 1, 
-                    "baseline": 1.038e-07, 
+                    "tau2": 51.13, 
+                    "baseline": 1.064e-07
+                }, 
+                "40Scomplex": {
+                    "tau": 106.8, 
+                    "KA": 0.2942, 
                     "subs": [
                         "prot", 
-                        "aMAPK", 
-                        "aCaMKIII", 
-                        "aCaMKIII"
+                        "aTrKB"
                     ]
                 }
             }
