@@ -16,6 +16,8 @@ PythonCode: The code to run HillTau.
 
 [Documentation for HillTau](Documentation.md)
 
+[Preprint for HillTau](https://www.biorxiv.org/content/10.1101/2020.09.20.305250v1), which discusses many aspects of its design and use.
+
 ## Installation
 Copy the two files hillTau.py and hillTauSchema.json from PythonCode to your
 target directory.
