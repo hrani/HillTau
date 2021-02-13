@@ -87,15 +87,20 @@ class ReacInfo():
             raise( ValueError( "Error: Reaction {} has zero reagents.".format( name ) ) )
         self.hillIndex = molInfo[ self.subs[-1] ].index
         self.reagIndex = molInfo[ self.subs[0] ].index
-        # subIndices are all but the hillIndex.
-        subIndices = [ molInfo[s].index for s in self.subs if s != self.subs[-1] ]
-        if len( subIndices ) > 1:
-            raise( ValueError( "Error: Reaction {} has {} reagents. Only single reagent R allowed.\nMust be of form R + nL <==> P or nL <==> P.".format( name, len( subIndices ) ) ) )
-
+        self.Kmod = 1.0
+        self.modIndex = 0
+        self.gain = 1.0
+        Kmod = reacObj.get( "Kmod" )
+        numUnique = len( set( self.subs ) )
+        self.oneSub = (numUnique == 1)
+        if numUnique > 3:
+            raise( ValueError( "Error: Reaction {} has > 3 reagents.".format( name ) ) )
+        if numUnique == 3 and not Kmod:
+            raise( ValueError( "Error: Reaction {} has 3 reagents but no Kmod specified for modifier.".format( name ) ) ) 
+        if numUnique <= 2 and Kmod:
+            raise( ValueError( "Error: Reaction {} has <=2 reagents, expecting 3 since Kmod specified for modifier.".format( name ) ) )
+        self.HillCoeff = len( self.subs ) + 1 - numUnique
         # Hill Coeff applies only to the last mol in the list.
-        self.oneSub = ( self.subs[0] == self.subs[-1] )
-        self.HillCoeff = len( self.subs ) + self.oneSub - 1
-        #self.HillCoeff = len( self.subs ) - 1
         self.kh = self.KA ** self.HillCoeff # Precompute it.
         self.inhibit = 0
         inh = reacObj.get( "inhibit" )
@@ -108,14 +113,26 @@ class ReacInfo():
         tau2 = reacObj.get( "tau2" )
         if tau2:
             self.tau2 = tau2
+        if Kmod: # Various validity checks have been done above
+            self.Kmod = Kmod
+            self.modIndex = molInfo[ self.subs[1] ].index
+            self.kh = self.KA ** self.HillCoeff # Precompute it.
+        gain = reacObj.get( "gain" )
+        if gain:
+            self.gain = gain
 
         #print( "Reac {}: hillIndex={}, hillCoeff = {}, kh = {}, reagIndex  {}".format( self.name, self.hillIndex, self.HillCoeff, self.kh, self.reagIndex ) )
 
     def concInf( self, conc ):
         h = conc[self.hillIndex] ** self.HillCoeff
+        if self.modIndex != 0:
+            mod = conc[ self.modIndex ] / self.Kmod
+        else:
+            mod = 1.0
         if self.oneSub: # this really only works for A<=>B and 2A<=>B
             return h / self.KA
-        s = conc[ self.reagIndex ]
+        s = conc[ self.reagIndex ] * self.gain
+        h *= mod
         if self.inhibit:
             return s * (1.0 - h / ( h + self.kh ) )
         else:

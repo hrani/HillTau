@@ -37,7 +37,7 @@ from matplotlib import lines
 import hillTau
 
 def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = '' ):
-    ax = plt.subplot( 4, 2, plotPos )
+    ax = plt.subplot( 5, 2, plotPos )
     ax.spines['top'].set_visible( False )
     ax.spines['right'].set_visible( False )
     '''
@@ -74,7 +74,7 @@ def runSim( fname, panelTitle, reacn, plotPos ):
     ax.plot( x , 1e3*plotvec[outputMolIndex], label = "output" )
 
 def plotPanelB( plotPos ):
-    ax = plt.subplot( 4, 2, plotPos )
+    ax = plt.subplot( 5, 2, plotPos )
     ax.axis( 'off' )
     ax.text( -0.3, 1, "B", fontsize = 18, weight = 'bold', transform = ax.transAxes )
     ax.text( -0.1, -0.1, '...\n"Species": {\n    "input": 0.0, "mol": 1.0\n},\n"Reacs": {\n    "output": {\n        "subs": ["mol", "input"],\n        "KA": 1.0, "tau": 1.0\n    }\n}', fontsize = 12 )
@@ -125,7 +125,7 @@ def plotPanelA( plotPos ):
 
 
 if __name__ == '__main__':
-    fig = plt.figure( figsize = (6,9), facecolor='white' )
+    fig = plt.figure( figsize = (7,12), facecolor='white' )
     fig.subplots_adjust( left = 0.18 )
     plotPanelA(1)
     plotPanelB(3)
@@ -134,6 +134,8 @@ if __name__ == '__main__':
     runSim( "HT_MODELS/conv.json", "E", u"input \u21cc output", 6 )
     runSim( "HT_MODELS/inh.json", "F", u"mol \u21cc input + output", 7 )
     runSim( "HT_MODELS/exc_tau_baseline.json", "G", u"input+mol+0.5 \u21cc output", 8 )
+    runSim( "HT_MODELS/modifier.json", "H", u"mod(input+mol) \u21cc output", 9 )
+    runSim( "HT_MODELS/gain.json", "I", u"(input+mol)*gain \u21cc output", 10 )
 
     plt.tight_layout()
     plt.show()
