@@ -284,10 +284,3 @@ void Model::makeEqn( const string & name, const string & grp, const string& expr
 	auto e = new EqnInfo( name, grp, expr, molInfo );
 	eqnInfo[ name ] = e;
 }
-
-void Model::setConc( unsigned int index, double value )
-{
-	if ( index > conc.size() )
-			throw "Error: index of conc[] out of range";
-	conc[index] = value;
-}

@@ -61,15 +61,11 @@ def runSim( fname, panelTitle, reacn, plotPos ):
 
     inputMolIndex = model.molInfo.get( "input" ).index
     outputMolIndex = model.molInfo.get( "output" ).index
-    #print( "STIM: input_index = {}, output_index = {} ".format( inputMolIndex, outputMolIndex ) )
     
     model.advance( 2 )
-    #model.conc[inputMolIndex] = 1e-3
-    model.setConc(inputMolIndex, 1e-3 )
+    model.conc[inputMolIndex] = 1e-3
     model.advance( 2 )
-    #model.conc[inputMolIndex] = 0.2e-3
-    model.setConc(inputMolIndex, 0.2e-3 )
-    # print( model.conc )
+    model.conc[inputMolIndex] = 0.2e-3
     model.advance( 6 )
     plotvec = np.transpose( np.array( model.plotvec ) )
     x = np.array( range( plotvec.shape[1] ) ) * model.dt

@@ -89,7 +89,6 @@ class Model
 			void allocConc();
 			void parseEqns();
 			void reinit();
-			void setConc( unsigned int index, double value );
 	private:
 			vector< vector< const ReacInfo* > > sortedReacInfo;
 };

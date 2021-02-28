@@ -1,51 +1,18 @@
-/************************************************************************
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
-PYBIND11_MODULE(example, m) {
-    py::class_<Pet>(m, "Pet")
-        .def(py::init<const std::string &>())
-        .def("setName", &Pet::setName)
-        .def("getName", &Pet::getName);
-	.def_readwrite("name", &Pet::name)
-}
-
-m.def("add", &add, "A function which adds two numbers",
-      py::arg("i"), py::arg("j"));
-
-
-struct Pet {
-    Pet(const std::string &name) : name(name) { }
-    void setName(const std::string &name_) { name = name_; }
-    const std::string &getName() const { return name; }
-
-    std::string name;
-};
-
-
-************************************************************************/
-
 #include <string>
 #include <map>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-// #include <pybind11/stl_bind.h>
+#include <pybind11/stl_bind.h>
 
 using namespace std;
 
 namespace py = pybind11;
 #include <htHeader.h>
 
-/*
-PYBIND11_MAKE_OPAQUE(std::vector<int>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, double>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, MolInfo>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, ReacInfo>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, EqnInfo>);
-*/
+PYBIND11_MAKE_OPAQUE(std::vector<double>);
 
 PYBIND11_MODULE(ht, m) {
+	py::bind_vector<std::vector<double>>(m, "VectorDouble");
     py::class_<MolInfo>(m, "MolInfo")
         .def( 
 			py::init<const std::string &, const std::string &, int, double>(), py::arg("name"), py::arg("grp"), py::arg("order") = 0, py::arg("concInit") = 0.0)
@@ -101,7 +68,6 @@ PYBIND11_MODULE(ht, m) {
 		.def( "assignReacSeq", &Model::assignReacSeq, "Builds up sortedReacOrder vectors.")
 		.def( "advance", &Model::advance, "Advances the simulation", py::arg( "runtime" ), py::arg( "settle" ) = 0 )
 		.def( "reinit", &Model::reinit, "Reinits all conc values" )
-		.def( "setConc", &Model::setConc, "Assigns a value in the conc array" )
 		.def( "allocConc", &Model::allocConc, "Allocates and initializes conc vectors" );
 }
 
