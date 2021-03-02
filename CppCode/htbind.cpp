@@ -3,7 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-
+#include <exprtk.hpp>
 using namespace std;
 
 namespace py = pybind11;
@@ -43,12 +43,12 @@ PYBIND11_MODULE(ht, m) {
 	/////////////////////////////////////////////////////////////////////
     py::class_<EqnInfo>(m, "EqnInfo")
         .def( 
-			py::init<const std::string &, const std::string &, const std::string&, const map< string, MolInfo*>&>())
+			py::init<const std::string &, const std::string &, const std::string&, const map< string, MolInfo* >&, vector< double >&>())
 		.def_readwrite("name", &EqnInfo::name)
 		.def_readwrite("grp", &EqnInfo::grp)
 		.def_readwrite("eqnStr", &EqnInfo::eqnStr)
-		.def( "eval", &EqnInfo::eval, "Evaluator for Eqns" )
-		.def( "findMolToken", &EqnInfo::findMolToken, "Static method to find a molecule token in an equation" );
+		.def_readonly("subs", &EqnInfo::subs)
+		.def( "eval", &EqnInfo::eval, "Evaluator for Eqns" );
 	/////////////////////////////////////////////////////////////////////
 
     py::class_<Model>(m, "Model")

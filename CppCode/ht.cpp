@@ -7,22 +7,14 @@
  * See the file COPYING.LIB for the full notice.
 ************************************************************************/
 
-/// #include <pybind11/pybind11.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <iostream>
 #include <cmath>
+#include <exprtk.hpp>
 using namespace std;
-/// namespace py = pybind11;
 #include <htHeader.h>
-/*
-PYBIND11_MAKE_OPAQUE(std::vector<int>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, double>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, MolInfo>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, ReacInfo>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, EqnInfo>);
-*/
 
 MolInfo::MolInfo( const std::string& name_, const std::string& grp_, int order_ = 0, double concInit_ = 0.0 ):
 	name(name_),
@@ -146,27 +138,71 @@ double ReacInfo::concInf( const vector< double >& conc ) const
 	}
 }
 
+////////////////////////////////////////////////////////////////////
+
+vector<unsigned int> EqnInfo::findMolTokens( const string& eqn )
+{
+	int isInMol = 0;
+	vector< unsigned int > ret;
+
+	for ( unsigned int i = 0; i < eqn.length(); i++ ) {
+		if (!isInMol ) {
+			if ( isalpha( eqn[i] ) ) {
+				isInMol = 1;
+				ret.push_back( i );
+			} else {
+				continue;
+			}
+		} else {
+			if ( isalnum( eqn[i] ) || eqn[i] == '_' ) {
+				continue;
+			} else {
+				ret.push_back( i );
+				isInMol = 0;
+			}
+		}
+	}
+
+	if (isInMol)
+		ret.push_back( eqn.length() );
+	if ( ret.size() % 2 != 0 )
+		throw "Error: equation token not ended? " + eqn;
+
+	return ret;
+}
+
 EqnInfo::EqnInfo( const string& name_, const string& grp_, 
-			const string& eqnStr_, 
-			const map< string, MolInfo* >& molInfo ):
+			const string& eqnStr_, const map< string, MolInfo* >& molInfo,
+			vector< double >& conc ):
 	name(name_),
 	grp( grp_ ),
 	eqnStr( eqnStr_ ),
 	molIndex( 0 )
 {
+	auto tokens = findMolTokens( eqnStr_ );
+	for ( auto i = tokens.begin(); i != tokens.end(); i += 2 ) {
+		string sstr = eqnStr_.substr( *i, *(i+1) - *i );
+		auto mi = molInfo.find( sstr );
+		if ( mi != molInfo.end() ) {
+			symbol_table.add_variable( sstr, conc[ mi->second->index ] );
+			subs.push_back( sstr );
+		}
+	}
+	symbol_table.add_constants();
+
+	expression.register_symbol_table( symbol_table );
+	exprtk::parser< double > parser;
+	parser.compile( eqnStr_, expression );
+	molIndex = molInfo.at( name )->index;
 };
 
 double EqnInfo::eval( vector< double >& conc ) const
 {
-	conc[molIndex] = 0.0;
-	return 0.0;
+	conc[molIndex] = expression.value();
+	return conc[molIndex];
 }
 
-string EqnInfo::findMolToken( const string& eqn )
-{
-	return "";
-}
-
+////////////////////////////////////////////////////////////////////
 Model::Model()
 {;
 }
@@ -229,7 +265,6 @@ void Model::allocConc()
 
 void Model::reinit()
 {
-	allocConc();
 	for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); r++) {
 		for (auto ri = r->begin(); ri != r->end(); ri++) {
 			unsigned int j = (*ri)->prdIndex;
@@ -242,7 +277,11 @@ void Model::reinit()
 			}
 		}
 	}
-	conc = concInit;
+	auto ci = concInit.begin();
+	for (auto c = conc.begin(); c < conc.end(); c++, ci++ ) {
+		*c = *ci;
+	}
+
 	plotvec.clear();
 	plotvec.push_back( conc );
 }
@@ -281,6 +320,6 @@ void Model::makeMol( const string & name, const string & grp, int order, double 
 void Model::makeEqn( const string & name, const string & grp, const string& expr )
 
 {
-	auto e = new EqnInfo( name, grp, expr, molInfo );
+	auto e = new EqnInfo( name, grp, expr, molInfo, conc );
 	eqnInfo[ name ] = e;
 }

@@ -54,17 +54,18 @@ class ReacInfo
 class EqnInfo
 {
 	public:
-			EqnInfo( const string& name, const string& grp, const string& eqnStr, const map< string, MolInfo *>& molInfo );
+			EqnInfo( const string& name, const string& grp, const string& eqnStr, const map< string, MolInfo* >& molInfo, vector< double >& conc );
 			string name;
 			string grp;
 			string eqnStr;
 			double eval( vector<double>& conc ) const;
-			static string findMolToken( const string& eqn );
+			static vector< unsigned int > findMolTokens(const string& eqn);
+			vector< string > subs;
 	private:
 			// Stuff for parser
-			vector< unsigned int > subs;
 			unsigned int molIndex;
-
+			exprtk::symbol_table<double> symbol_table;
+			exprtk::expression<double> expression;
 };
 
 class Model
