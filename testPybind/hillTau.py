@@ -79,8 +79,6 @@ def scaleDict( jsonDict, qs ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 # Check if it is a single substrate reac
-                print( "!!!!!      !!!!!    ", reac["subs"] )
-
                 if len( reac["subs"] ) == 1:
                     reac["KA"] = float( SIGSTR.format( reac["KA"] ) )
                 else:
@@ -138,8 +136,11 @@ def parseModel( jsonDict ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 subs = reac['subs']
-                reac['subs'] = 0.0
+                # Hideous hack to interface with model::makeReac, which
+                # expects all args in reac to be floats.
+                reac['subs'] = 0.0 
                 model.makeReac( reacname, grpname, subs, reac )
+                reac['subs'] = subs
 
     # Now set up the equation, again, we need the mols defined.
     for grpname, grp in jsonDict['Groups'].items():
