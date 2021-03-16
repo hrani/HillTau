@@ -25,7 +25,7 @@
 								"tau": { "type": "number" },
 								"tau2": { "type": "number" },
 								"inhibit": { "type": "number" },
-								"baseline": { "type": "number" }
+								"baseline": { "type": "number" },
 								"gain": { "type": "number" }
 							},
 							"required": ["subs", "KA", "tau"],

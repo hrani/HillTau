@@ -13,8 +13,15 @@
 #include <iostream>
 #include <cmath>
 #include <exprtk.hpp>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+#include <pybind11/stl_bind.h>
 using namespace std;
 #include <htHeader.h>
+PYBIND11_MAKE_OPAQUE(std::vector<double>);
+PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
+PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
+PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
 MolInfo::MolInfo( const std::string& name_, const std::string& grp_, int order_ = 0, double concInit_ = 0.0 ):
 	name(name_),
@@ -40,13 +47,13 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	baseline( 0.0 ),
 	inhibit( 0 ),
 	prdIndex( 0 ),
-	subs( subs_ ),
 	kh( 1.0 ),
+	HillCoeff( 1.0 ),
+	subs( subs_ ),
 	hillIndex( 0 ),
 	reagIndex( 0 ),
 	modIndex( 0 ),
-	oneSub( false ),
-	HillCoeff( 1.0 )
+	oneSub( false )
 {
 	tau2 = tau;
 	prdIndex = molInfo.at(name)->index;
@@ -204,8 +211,10 @@ double EqnInfo::eval( vector< double >& conc ) const
 
 ////////////////////////////////////////////////////////////////////
 Model::Model()
-{;
-}
+	: 
+			currentTime( 0.0 ),
+			dt( 1.0 )
+{;}
 
 void Model::setReacSeqDepth( int maxDepth )
 {

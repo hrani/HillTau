@@ -37,17 +37,17 @@ class ReacInfo
 			double baseline;
 			int inhibit;
 			int prdIndex;
+			double kh;
+			double HillCoeff;
 			double concInf( const vector< double >& conc ) const;
 			double eval( Model* model, double dt ) const;
 			vector< string > subs;
 
 	private:
-			double kh;
 			unsigned int hillIndex;
 			unsigned int reagIndex;
 			unsigned int modIndex;
 			bool oneSub;
-			double HillCoeff;
 
 };
 

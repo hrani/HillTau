@@ -10,6 +10,9 @@ namespace py = pybind11;
 #include <htHeader.h>
 
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
+PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
+PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
+PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
 PYBIND11_MODULE(ht, m) {
 	py::bind_vector<std::vector<double>>(m, "VectorDouble");
@@ -36,6 +39,8 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("baseline", &ReacInfo::baseline)
 		.def_readwrite("inhibit", &ReacInfo::inhibit)
 		.def_readwrite("prdIndex", &ReacInfo::prdIndex)
+		.def_readwrite("kh", &ReacInfo::kh)
+		.def_readonly("HillCoeff", &ReacInfo::HillCoeff)
 		.def_readonly("subs", &ReacInfo::subs)
 		.def( "eval", &ReacInfo::eval, "Evaluator for Reacs" )
 		.def( "concInf", &ReacInfo::concInf, "Computes steady-state value of reaction output" );
