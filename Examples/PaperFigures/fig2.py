@@ -61,7 +61,7 @@ def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = 'Time (s)', ylabel = '
     return ax
 
 def runSim( chem, ht, plotPos ):
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     stim = moose.element( '/model/kinetics/input' )
     output = moose.element( '/model/kinetics/input' )
     iplot = moose.element( '/model/graphs/conc1/input.Co' )
@@ -106,7 +106,7 @@ def runSim( chem, ht, plotPos ):
 
 def runOsc( chem, ht, plotPos ):
     runtime = 6000
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     #output = moose.element( '/model/kinetics/MAPK/MAPK_PP' )
     oplot = moose.element( '/model/graphs/conc1/MAPK_PP.Co' )
     moose.setClock( oplot.tick, plotDt )

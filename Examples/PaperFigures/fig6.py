@@ -44,7 +44,7 @@ i1 = 1e-3
 plotDt = 1
 
 def runSim( chem, ht, runtime ):
-    modelId = moose.loadModel( "KKIT_MODELS/" + chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( "KKIT_MODELS/" + chem, 'model', 'gsl' )
     for i in range( 10, 20 ):
         moose.setClock( i, plotDt )
 

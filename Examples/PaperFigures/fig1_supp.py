@@ -56,7 +56,7 @@ def runSim( fname, plotPos, text ):
     ht = "HT_MODELS/" + fname + ".json"
     chem = "KKIT_MODELS/" + fname + ".g"
     ax = plotBoilerplate( plotPos, text )
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     #moose.le( '/model/kinetics')
     for i in range( 10, 20 ):
         moose.setClock( i, plotDt )

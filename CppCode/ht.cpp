@@ -49,6 +49,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	prdIndex( 0 ),
 	kh( 1.0 ),
 	HillCoeff( 1.0 ),
+	overrideConcInit( false ),
 	subs( subs_ ),
 	hillIndex( 0 ),
 	reagIndex( 0 ),
@@ -147,6 +148,7 @@ double ReacInfo::concInf( const vector< double >& conc ) const
 
 ////////////////////////////////////////////////////////////////////
 
+/*
 vector<unsigned int> EqnInfo::findMolTokens( const string& eqn )
 {
 	int isInMol = 0;
@@ -154,6 +156,12 @@ vector<unsigned int> EqnInfo::findMolTokens( const string& eqn )
 
 	for ( unsigned int i = 0; i < eqn.length(); i++ ) {
 		if (!isInMol ) {
+			if (eqn[i] == 'e' || eqn[i] == 'E' ) {
+				if ( i < eqn.length() - 1 ) {
+					if ( eqn[i] == '+' || eqn[i] == '-' || isalnum(eqn[i]) )
+						continue;
+				}
+			}
 			if ( isalpha( eqn[i] ) ) {
 				isInMol = 1;
 				ret.push_back( i );
@@ -177,15 +185,24 @@ vector<unsigned int> EqnInfo::findMolTokens( const string& eqn )
 
 	return ret;
 }
+*/
 
 EqnInfo::EqnInfo( const string& name_, const string& grp_, 
-			const string& eqnStr_, const map< string, MolInfo* >& molInfo,
+			const string& eqnStr_, const vector< string >& eqnSubs, const map< string, MolInfo* >& molInfo,
 			vector< double >& conc ):
 	name(name_),
 	grp( grp_ ),
 	eqnStr( eqnStr_ ),
+	subs( eqnSubs ),
 	molIndex( 0 )
 {
+	for ( const auto& s: eqnSubs ) {
+		auto mi = molInfo.find( s );
+		if ( mi != molInfo.end() ) {
+			symbol_table.add_variable( s, conc[ mi->second->index ] );
+		}
+	}
+	/**
 	auto tokens = findMolTokens( eqnStr_ );
 	for ( auto i = tokens.begin(); i != tokens.end(); i += 2 ) {
 		string sstr = eqnStr_.substr( *i, *(i+1) - *i );
@@ -195,6 +212,7 @@ EqnInfo::EqnInfo( const string& name_, const string& grp_,
 			subs.push_back( sstr );
 		}
 	}
+	*/
 	symbol_table.add_constants();
 
 	expression.register_symbol_table( symbol_table );
@@ -274,15 +292,21 @@ void Model::allocConc()
 
 void Model::reinit()
 {
+	// Logic: Any explicitly defined initialization value is to be used
+	// as is. This is happens if ReacInfo::overrideConcInit is false.
+	// Any others need to be estimated from the steady-state 
+	// value of the reacns.
 	for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); r++) {
 		for (auto ri = r->begin(); ri != r->end(); ri++) {
-			unsigned int j = (*ri)->prdIndex;
-			if ((*ri)->inhibit ) {
-				concInit[j] = (*ri)->concInf( concInit ) + (*ri)->baseline;
-				if ( concInit[j] < 0.0 )
-					concInit[j] = 0.0;
-			} else {
-				concInit[j] = (*ri)->baseline;
+			if ( (*ri)->overrideConcInit ) {
+				unsigned int j = (*ri)->prdIndex;
+				if ((*ri)->inhibit ) {
+					concInit[j] = (*ri)->concInf( concInit ) + (*ri)->baseline;
+					if ( concInit[j] < 0.0 )
+						concInit[j] = 0.0;
+				} else {
+					concInit[j] = (*ri)->baseline;
+				}
 			}
 		}
 	}
@@ -302,6 +326,10 @@ void Model::makeReac( const string & name, const string & grp,
 	auto r = new ReacInfo( name, grp, subs, reacObj, molInfo );
 	reacInfo[ name ] = r;
 	if ( molInfo[name]->order == -1 ) {
+		// If the molecule represented by the reac has already been defined,
+		// we use its original concInit. If not, we need to override the
+		// concInit with a value estimated from steady-state level of reac.
+		r->overrideConcInit = true;
 		if ( r->inhibit ) {
 			concInit[ r->prdIndex ] = r->concInf( concInit ) + r->baseline;
 			if ( concInit [ r->prdIndex ] < 0.0 )
@@ -311,7 +339,7 @@ void Model::makeReac( const string & name, const string & grp,
 		}
 	}
 }
-void Model::makeMol( const string & name, const string & grp, int order, double concInit )
+void Model::makeMol( const string & name, const string & grp, int order, double concInit, bool preserveConcInit = false )
 
 {
 	auto mi = molInfo.find( name );
@@ -319,16 +347,16 @@ void Model::makeMol( const string & name, const string & grp, int order, double 
 		auto m = new MolInfo( name, grp, order, concInit );
 		m->index = molInfo.size();
 		molInfo[ name ] = m;
-	} else {
+	} else if (!preserveConcInit ) {
 		// Could be the second pass assignment of species with concInits.
 		mi->second->concInit = concInit;
 		mi->second->order = order;
 	}
 }
 
-void Model::makeEqn( const string & name, const string & grp, const string& expr )
+void Model::makeEqn( const string & name, const string & grp, const string& expr, const vector< string >& eqnSubs )
 
 {
-	auto e = new EqnInfo( name, grp, expr, molInfo, conc );
+	auto e = new EqnInfo( name, grp, expr, eqnSubs, molInfo, conc );
 	eqnInfo[ name ] = e;
 }

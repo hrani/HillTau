@@ -68,7 +68,7 @@ def ts( chem, ht, ampl, plotPos, title = '' ):
     tpre = 10
     tstim = 1
     tpost = 50
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     Ca = moose.element( '/model/kinetics/Ca' )
     output = moose.element( '/model/kinetics/p_AMPAR' )
     iplot = moose.element( '/model/graphs/conc1/Ca.Co' )
@@ -184,7 +184,7 @@ def runDoser( kkit, ht, plotPos, title = "" ):
     ax.set_xscale( "log" )
     ax.set_xlim( 0.01, 10 )
     ax.set_ylim( 0, 0.6 )
-    modelId = moose.loadModel( kkit, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( kkit, 'model', 'gsl' )
     x, y = doseRespMoose()
     ax.plot( x , y, label = "Syn_vs_Ca_moose" )
 

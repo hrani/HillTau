@@ -41,6 +41,7 @@ class ReacInfo
 			double HillCoeff;
 			double concInf( const vector< double >& conc ) const;
 			double eval( Model* model, double dt ) const;
+			bool overrideConcInit;
 			vector< string > subs;
 
 	private:
@@ -54,7 +55,7 @@ class ReacInfo
 class EqnInfo
 {
 	public:
-			EqnInfo( const string& name, const string& grp, const string& eqnStr, const map< string, MolInfo* >& molInfo, vector< double >& conc );
+			EqnInfo( const string& name, const string& grp, const string& eqnStr, const vector< string >& eqnSubs, const map< string, MolInfo* >& molInfo, vector< double >& conc );
 			string name;
 			string grp;
 			string eqnStr;
@@ -81,9 +82,9 @@ class Model
 			vector< double > concInit;
 			vector< vector< double > > plotvec;
 			
-			void makeMol( const string & name, const string & grp, int order, double concInit );
+			void makeMol( const string & name, const string & grp, int order, double concInit, bool preserveConcInit );
 			void makeReac( const string & name, const string & grp, const vector< string >& subs, const map< string, double >& reacObj );
-			void makeEqn( const string & name, const string & grp, const string& expr );
+			void makeEqn( const string & name, const string & grp, const string& expr, const vector< string >& eqnSubs );
 			void setReacSeqDepth( int order );
 			void assignReacSeq( const string& name, int seq );
 			void advance( double runtime, int settle );

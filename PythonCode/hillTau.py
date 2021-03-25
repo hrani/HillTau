@@ -35,6 +35,8 @@ lookupQuantityScale = { "M": 1000.0, "mM": 1.0, "uM": 1e-3, "nM": 1e-6, "pM": 1e
 
 SIGSTR = "{:.4g}" # Used to format floats to keep to 4 sig fig. Helps when dumping JSON files.
 
+mathFns = ["exp", "log", "ln", "log10", "abs", "sin", "cos", "tan", "sinh", "cosh", "tanh", "sqrt", "pow"]
+
 def loadHillTau( fname ):
     with open( fname ) as json_file:
         model = json.load( json_file )
@@ -162,55 +164,24 @@ class ReacInfo():
         return 0.0
 
 class EqnInfo():
-    def __init__( self, name, grp, eqnStr ):
+    def __init__( self, name, grp, eqnStr, subs ):
         self.name = name
         self.grp = grp
         self.eqnStr = eqnStr
-        self.subs = []
+        self.subs = subs
 
-    @staticmethod
-    def findMolToken( eqn ):
-        ''' Finds the first molecule name in the given equation string.
-        The first char must be an alphabetic one. 
-        The subsequent chars must be alphabetic or _ (underscore).
-        Returns the molecule name and the remainder of the string.
-        '''
-        isInMol = False
-        start = 0
-        for i, char in enumerate( eqn ):
-            if not isInMol:
-                if char.isalpha():
-                    isInMol = True
-                    start = i
-                else:
-                    continue
-            else:
-                if char.isalnum() or char == "_":
-                    continue
-                else:
-                    return( eqn[start:i], eqn[i:] )
-        if isInMol:
-            return( eqn[start:], "" )
-        else:
-            return( "", eqn )
-            
     def parseEqn( self, molInfo ):
+        # Replace mol names with lookup index in molecule array, and func names with np.funcName.
         self.index = molInfo[self.name].index
-        mol, eqn = EqnInfo.findMolToken( self.eqnStr )
-        #print( "findMolToken in {} = '{}'  '{}'".format( self.eqnStr, mol, eqn))
         self.newEq = self.eqnStr
-        while len( mol ) > 0:
-            if mol in ["exp", "log", "tanh", "sqrt", "pow"]:
-                self.newEq = self.newEq.replace( mol, "np.{}".format( mol ), 1 )
-                mol, eqn = EqnInfo.findMolToken( eqn )
-                continue
+        for mol in self.subs:
             mi = molInfo.get( mol )
             if not mi:
-                print( "Error: unknown molecule '{}' in equation '{}'".format( mol, self.eqnStr ) )
-                quit()
+                raise( ValueError( "Error: unknown molecule '{}' in equation '{}'".format( mol, self.eqnStr ) ) )
             self.newEq = self.newEq.replace( mol, "m[{}]".format( mi.index ), 1 )
-            self.subs.append( mol )
-            mol, eqn = EqnInfo.findMolToken( eqn )
+        for func in mathFns:
+            self.newEq = self.newEq.replace( func, "np.{}".format( func ) )
+
 
     def eval( self, m ):
         m[self.index] = ret = eval( self.newEq )
@@ -313,6 +284,33 @@ def scaleDict( jsonDict, qs ):
                 if bl:
                     reac["baseline"] = float( SIGSTR.format( bl * qs ) )
 
+def extractSubs( expr ):
+    # This function extracts the molecule names from a math expression.
+    isInMol = 0
+    molname = ""
+    lastch = ''
+    mols = []
+    for ch in expr:
+        if isInMol:
+            if ch.isalnum() or ch == '_':
+                molname += ch
+                continue
+            else:
+                isInMol = 0
+                if not molname in mathFns:
+                    mols.append( molname )
+        else:
+            if ch in "eE" and (lastch.isdigit() or lastch == '.'):
+                # This is the e in sci notation
+                lastch = ch
+                continue
+            if ch.isalpha():
+                molname = ch
+                isInMol = 1
+            else:
+                lastch = ch
+    return mols
+
 def parseModel( jsonDict ):
     model = Model( jsonDict )
 
@@ -333,8 +331,11 @@ def parseModel( jsonDict ):
     for grpname, grp in model.jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
-                model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr )
+                subs = extractSubs( expr )
+                for subname in subs:
+                    model.molInfo[subname] = MolInfo( subname, grpname, order=0 )
                 model.molInfo[lhs] = MolInfo( lhs, grpname, order=-1)
+                model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr, subs )
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 model.molInfo[reacname] = MolInfo( reacname, grpname, order=-1 )

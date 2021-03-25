@@ -48,7 +48,7 @@ PYBIND11_MODULE(ht, m) {
 	/////////////////////////////////////////////////////////////////////
     py::class_<EqnInfo>(m, "EqnInfo")
         .def( 
-			py::init<const std::string &, const std::string &, const std::string&, const map< string, MolInfo* >&, vector< double >&>())
+			py::init<const std::string &, const std::string &, const std::string&, const vector< string >&, const map< string, MolInfo* >&, vector< double >&>())
 		.def_readwrite("name", &EqnInfo::name)
 		.def_readwrite("grp", &EqnInfo::grp)
 		.def_readwrite("eqnStr", &EqnInfo::eqnStr)
@@ -66,9 +66,9 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("conc", &Model::conc)
 		.def_readwrite("concInit", &Model::concInit)
 		.def_readonly("plotvec", &Model::plotvec)
-		.def( "makeMol", &Model::makeMol, "Create MolInfo object.", py::arg("name"), py::arg("grp"), py::arg("order") = 0, py::arg("concInit") = 0.0)
+		.def( "makeMol", &Model::makeMol, "Create MolInfo object.", py::arg("name"), py::arg("grp"), py::arg("order") = 0, py::arg("concInit") = 0.0, py::arg("preserveConcInit") = false )
 		.def( "makeReac", &Model::makeReac, "Create ReacInfo object.", py::arg("name"), py::arg("grp"), py::arg("subs"), py::arg("reacParms"))
-		.def( "makeEqn", &Model::makeEqn, "Create EqnInfo object.", py::arg("name"), py::arg("grp"), py::arg("expr"))
+		.def( "makeEqn", &Model::makeEqn, "Create EqnInfo object.", py::arg("name"), py::arg("grp"), py::arg("expr"), py::arg( "eqnSubs" ) )
 		.def( "setReacSeqDepth", &Model::setReacSeqDepth, "Defines how deep is the sequence of reactions, that is, the size of sortedReacInfo.")
 		.def( "assignReacSeq", &Model::assignReacSeq, "Builds up sortedReacOrder vectors.")
 		.def( "advance", &Model::advance, "Advances the simulation", py::arg( "runtime" ), py::arg( "settle" ) = 0 )

@@ -65,7 +65,7 @@ def ts( chem, ht, ampl, plotPos, title = '', is_LTP = False ):
     Ca_rest = 0.08e-3
     BDNF_rest = 0.05e-6
     BDNF_ampl = 3.7e-6
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     Ca = moose.element( '/model/kinetics/Ca' )
     BDNF = moose.element( '/model/kinetics/BDNF' )
     output = moose.element( '/model/kinetics/protein' )
@@ -156,7 +156,7 @@ def non_trained_ts( chem, ht, plotPos, title = '' ):
     Ca_ampl = 10e-3
     BDNF_rest = 0.05e-6
     BDNF_ampl = 3.7e-6
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     Ca = moose.element( '/model/kinetics/Ca' )
     BDNF = moose.element( '/model/kinetics/BDNF' )
     output = moose.element( '/model/kinetics/protein' )
@@ -263,7 +263,7 @@ def adv( model, inputMolIndex, t, dt, val ):
 def runDoser( kkit, ht, plotPos, doseList, var = "Ca", title = "", BDNF = -1 ):
     ax = plotBoilerplate( char[plotPos], plotPos, title, xlabel = "[{}] ($\mu$M)".format( var ), ylabel = "protein (nM/s)" )
     ax.set_xscale( "log" )
-    modelId = moose.loadModel( kkit, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( kkit, 'model', 'gsl' )
     tmoose = time.time()
     if BDNF > 0.0:
         moose.element( '/model/kinetics/BDNF' ).concInit = BDNF * 1e-3
