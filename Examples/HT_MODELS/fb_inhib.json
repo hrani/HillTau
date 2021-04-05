@@ -1,6 +1,7 @@
 {
-    "Comment": "Conc units are milliMolar, time units are seconds", 
+    "Comment": "Conc units are microMolar, time units are seconds", 
     "Description": "Feedback inhibition", 
+	"QuantityUnits": "uM",
     "Groups": {
         "input_g": {
             "Species": { "input": 0.0 }
@@ -9,12 +10,12 @@
             "Species": { "mol": 1.0 }, 
             "Reacs": {
                 "output": {
-                    "tau2": 8.512, "tau": 1.5, "KA": 0.0009764, "inhibit": 1, 
-                    "subs": [ "input", "fb", "fb" ]
+                    "tau": 2, "tau2": 15, "KA": 0.005, "Kmod": 0.005, 
+                    "subs": [ "mol", "fb", "input" ]
                 }, 
                 "fb": {
-                    "tau": 47.05, "KA": 0.09769, 
-                    "subs": [ "mol", "output" ]
+                    "tau": 1.5, "KA": 0.01, "inhibit": 1,
+                    "subs": [ "mol", "output", "output" ]
                 }
             }
         }

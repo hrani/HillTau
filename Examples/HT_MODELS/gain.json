@@ -1,6 +1,6 @@
 {
 	"Author": "Upi Bhalla",
-	"Description": "Excitation model",
+	"Description": "Excitation model, but with a gain of 2.0",
 	"Comment": "Conc units are milliMolar, time units are seconds",
 	"Groups": {
 		"input_g": {

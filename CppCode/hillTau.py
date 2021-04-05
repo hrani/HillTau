@@ -64,8 +64,10 @@ class Stim():
         return stim.time
 
 def getQuantityScale( jsonDict ): 
-    qu = jsonDict.get( "quantityUnits" )
+    qu = jsonDict.get( "QuantityUnits" )
     qs = 1.0
+    if not qu:
+        qu = jsonDict.get( "quantityUnits" )
     if qu:
         qs = lookupQuantityScale[qu]
     return qs

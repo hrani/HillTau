@@ -1,7 +1,8 @@
 {
 	"Author": "Upi Bhalla",
 	"Description": "Feedforward inhibition",
-	"Comment": "Conc units are milliMolar, time units are seconds",
+	"Comment": "Conc units are microMolar, time units are seconds",
+	"QuantityUnits": "uM",
 	"Groups": {
 		"input_g": {
 			"Species": {"input": 0.0 }

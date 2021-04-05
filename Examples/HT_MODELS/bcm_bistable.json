@@ -2,7 +2,7 @@
 	"Author": "Upi Bhalla",
 	"Description": "Synaptic plasticity",
 	"Comment": "Conc units are uM, time units are seconds",
-	"quantityUnits": "uM",
+	"QuantityUnits": "uM",
 	"Groups": {
 		"ampar_g" : {
 			"Species": {"internal": 1.0},
@@ -12,7 +12,7 @@
 			}
 		},
 		"CaN_g": {
-			"Species": {"Ca": 0.08, "Ca_basal": 0.08, "CaN_basal": 0.32, "CaN": 1},
+			"Species": {"Ca": 0.08, "Ca_basal": 0.08, "CaN_basal": 0.32, "CaN": 0.1},
 			"Reacs":{
 				"CaN": {"subs": ["CaN_basal", "Ca", "Ca"],
 						"KA": 0.3, "tau": 2 }
