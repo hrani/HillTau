@@ -196,10 +196,12 @@ EqnInfo::EqnInfo( const string& name_, const string& grp_,
 	subs( eqnSubs ),
 	molIndex( 0 )
 {
-	for ( const auto& s: eqnSubs ) {
+	for ( const auto& s: subs ) {
 		auto mi = molInfo.find( s );
 		if ( mi != molInfo.end() ) {
 			symbol_table.add_variable( s, conc[ mi->second->index ] );
+		} else {
+			throw( "Error: Unable to find variable '" + s + "' in equation " + eqnStr );
 		}
 	}
 	/**
@@ -217,7 +219,7 @@ EqnInfo::EqnInfo( const string& name_, const string& grp_,
 
 	expression.register_symbol_table( symbol_table );
 	exprtk::parser< double > parser;
-	parser.compile( eqnStr_, expression );
+	parser.compile( eqnStr, expression );
 	molIndex = molInfo.at( name )->index;
 };
 

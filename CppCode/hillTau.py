@@ -119,6 +119,9 @@ def extractSubs( expr ):
                 isInMol = 1
             else:
                 lastch = ch
+    if isInMol:
+        mols.append( molname )
+
     return mols
 
 
