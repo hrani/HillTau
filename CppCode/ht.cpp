@@ -264,10 +264,13 @@ void Model::advance( double runtime, int settle )
 
 	int i = 0;
 	for (double t = 0.0; t < runtime; t += newdt ) {
+		double ndt = newdt;
+		if ( newdt > (runtime - t) * 1.0000001 )
+			ndt = runtime - t;
 		for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); 
 						r++) {
 			for (auto ri = r->begin(); ri != r->end(); ri++ ) {
-				(*ri)->eval( this, newdt );
+				(*ri)->eval( this, ndt );
 			}
 		}
 		for (auto e = eqnInfo.begin(); e != eqnInfo.end(); ++e ) {

@@ -164,26 +164,30 @@ class ReacInfo():
         return 0.0
 
 class EqnInfo():
-    def __init__( self, name, grp, eqnStr, subs ):
+    def __init__( self, name, grp, eqnStr, subs, cs ):
         self.name = name
         self.grp = grp
         self.eqnStr = eqnStr
         self.subs = subs
+        self.consts = cs
 
-    def parseEqn( self, molInfo, consts ):
+    def parseEqn( self, molInfo, globalConsts ):
         # Replace mol names with lookup index in molecule array, and func names with np.funcName.
         self.index = molInfo[self.name].index
         self.newEq = self.eqnStr
+        for name in self.consts:
+            val = globalConsts.get( name )
+            if val:
+                self.newEq = self.newEq.replace( name, str( val ) )
+            else:
+                raise( ValueError( "Error: unknown const '{}' in equation '{}'".format( name, self.eqnStr ) ) )
+
         for mol in self.subs:
-            ci = consts.get( mol )
-            if ci:
-                self.newEq = self.newEq.replace( mol, str( ci ), 1 )
-            else: 
-                mi = molInfo.get( mol )
-                if not mi:
-                    raise( ValueError( "Error: unknown molecule '{}' in equa    tion '{}'".format( mol, self.eqnStr ) ) )
-                else:
-                    self.newEq = self.newEq.replace( mol, "m[{}]".format( mi.index ), 1 )
+            mi = molInfo.get( mol )
+            if mi:
+                self.newEq = self.newEq.replace( mol, "m[{}]".format( mi.index ), 1 )
+            else:
+                raise( ValueError( "Error: unknown molecule '{}' in equation '{}'".format( mol, self.eqnStr ) ) )
 
         for func in mathFns:
             self.newEq = self.newEq.replace( func, "np.{}".format( func ) )
@@ -324,7 +328,7 @@ def scaleDict( jsonDict, qs ):
                 if bl:
                     scaleConst( reac, "baseline", qs, consts, constDone )
 
-def extractSubs( expr ):
+def extractSubs( expr, consts ):
     # This function extracts the molecule names from a math expression.
     isInMol = 0
     molname = ""
@@ -351,7 +355,14 @@ def extractSubs( expr ):
                 lastch = ch
     if isInMol:
         mols.append( molname )
-    return mols
+    s = []
+    c = []
+    for key in mols:
+        if key in consts:
+            c.append( key )
+        else:
+            s.append( key )
+    return s, c
 
 def convConst( consts, value ):
     # Convert named const to number, or if already a number, return it.
@@ -389,11 +400,11 @@ def parseModel( jsonDict ):
     for grpname, grp in model.jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
-                subs = extractSubs( expr )
+                subs, cs = extractSubs( expr, model.consts )
                 for subname in subs:
                     model.molInfo[subname] = MolInfo( subname, grpname, order=0 )
                 model.molInfo[lhs] = MolInfo( lhs, grpname, order=-1)
-                model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr, subs )
+                model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr, subs, cs )
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 model.molInfo[reacname] = MolInfo( reacname, grpname, order=-1 )
