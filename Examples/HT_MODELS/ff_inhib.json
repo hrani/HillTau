@@ -10,9 +10,9 @@
 		"output_g": {
 			"Species": {"mol1": 1.0, "mol2": 1.0 },
 			"Reacs": {
-				"output": {"subs": ["input","temp2"],
-					"KA": 1, "tau":1.0 },
-				"temp2": {"subs": ["mol2","input"],
+				"output": {"subs": ["mol1","ff", "input"],
+					"KA": 1, "tau":1.0, "Kmod": 1 },
+				"ff": {"subs": ["mol2","input"],
 					"KA": 0.5, "tau":2.0, "inhibit": 1 }
 			}
 		}

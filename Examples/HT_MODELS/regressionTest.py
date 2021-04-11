@@ -16,12 +16,12 @@ stimVec = [
     ["conv", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["conv2ndOrder", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["exc_tau_baseline", "input", [1e-3, 10, 0, 20], "output", [0.7638e-3, 10.75, 1.0e-3, 20, 0.684e-3, 25]],
-    ["ff_inhib", "input", [1e-3, 10, 0, 20], "output", [0.356e-3, 12.3, 0.255e-3, 20, 0, 30]],
+    ["ff_inhib", "input", [1e-3, 10, 0, 20], "output", [0.3535e-3, 12.3, 0.2549e-3, 20, 0, 30]],
     ["fb_inhib", "input", [1e-3, 10, 0, 20], "output", [0.409e-3, 12.7, 0.2686e-3, 20, 0, 30]],
     ["gain", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["modifier", "input", [1e-3, 10, 0, 20], "output", [0.3513e-3, 10.75, 0.667e-3, 20, 0.0, 30]],
-    ["bistable", "fb", [0.5, 20, 0.0, 40, 0, 60, 0, 60.1, 0, 60.2, 0, 60.3, 0, 60.4, 0, 60.5, 0, 60.6, 0, 60.7, 0, 60.8], "output", [0.03, 20, 1.024, 40, 1.024, 60, 0.03, 80]],
-    ["bcm_bistable", "Ca", [2e-3, 15, 0.08e-3, 16, 0.3e-3, 35, 0.08e-3, 45], "synAMPAR", [0.2e-6, 15, 0.8183e-3, 20, 0.833e-3, 30, 0.2e-6, 60 ]],
+    ["bistable", "mod", [100, 20, 1, 25, 0.01, 40, 1, 45, 0.01, 60, 1, 70], "output", [0.03, 20, 1.024, 40, 1.024, 60, 0.03, 80]],
+    ["bcm_bistable", "Ca", [2e-3, 15, 0.08e-3, 16, 0.4e-3, 35, 0.08e-3, 45], "synAMPAR", [0.207e-6, 15, 0.8205e-3, 20, 0.8331e-3, 30, 0.21e-6, 60 ]],
 ]
 
 class Event():
@@ -44,7 +44,7 @@ def runit( f ):
     qs = hillTau.getQuantityScale( jsonDict )
     hillTau.scaleDict( jsonDict, qs )
     model = hillTau.parseModel( jsonDict )
-    model.dt = 1
+    model.dt = 10.0
 
     ev = []
     ev.extend( parseEvents( f[1], f[2], 1 ) )

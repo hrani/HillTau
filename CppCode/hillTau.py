@@ -72,28 +72,58 @@ def getQuantityScale( jsonDict ):
         qs = lookupQuantityScale[qu]
     return qs
 
+def scaleConst( holder, name, qs, consts, constDone ):
+    # This scales values with concentration units. It checks if the value
+    # is a string, in which case it tries to scale the reference constant.
+    # Otherwise it scales the entry in situ.
+    val = holder.get( name )
+    if isinstance( val, str ):
+        constName = val
+        ci = consts.get( constName )
+        if not ci:
+            raise( ValueError( "Error: Constant {} not found.".format( constName ) ) )
+        if not constDone[ constName ]:
+            consts[ constName] = float( SIGSTR.format( ci * qs ) )
+            constDone[ constName ] = 1
+    else:
+        holder[name] = float( SIGSTR.format( val * qs ) )
+
+
 def scaleDict( jsonDict, qs ):
+    # This acts before parsing the model, so it should leave the model
+    # definition layout intact. That means it should scale the
+    # constant definitions rather than fill in values where the the constants are
+    # cited in the model. This means we have to take care not to scale
+    # a given constant more than once, as it may be used many times.
+    consts = jsonDict.get("Constants")
+    if not consts:
+        consts = {}
+    constDone = { i:0 for i in consts.keys()} # dict of all const names.
     for grpname, grp in jsonDict["Groups"].items():
         sp = grp.get( "Species" )
         if sp:
             for m in sp:
-                sp[m] = float( SIGSTR.format( sp[m] * qs ) )
+                scaleConst( sp, m, qs, consts, constDone )
+                #sp[m] = float( SIGSTR.format( sp[m] * qs ) )
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 # Check if it is a single substrate reac
-                if len( reac["subs"] ) == 1:
-                    reac["KA"] = float( SIGSTR.format( reac["KA"] ) )
-                else:
-                    reac["KA"] = float( SIGSTR.format( reac["KA"] * qs ) )
+                if len( reac["subs"] ) != 1:
+                    scaleConst( reac, "KA", qs, consts, constDone )
+                '''
                 reac["tau"] = float( SIGSTR.format( reac["tau"] ) )
                 tau2 = reac.get( "tau2" )
                 if tau2:
                     reac["tau2"] = float( SIGSTR.format( tau2 ) )
+                '''
                 bl = reac.get( "baseline" )
                 if bl:
-                    reac["baseline"] = float( SIGSTR.format( bl * qs ) )
+                    scaleConst( reac, "baseline", qs, consts, constDone )
+                kmod = reac.get( "Kmod" )
+                if kmod:
+                    scaleConst( reac, "Kmod", qs, consts, constDone )
 
-def extractSubs( expr ):
+def extractSubs( expr, consts ):
     # This function extracts the molecule names from a math expression.
     isInMol = 0
     mathFns = ["exp", "log", "ln", "log10", "abs", "sin", "cos", "tan", "sinh", "cosh", "tanh", "sqrt", "pow"]
@@ -121,14 +151,31 @@ def extractSubs( expr ):
                 lastch = ch
     if isInMol:
         mols.append( molname )
+    s = []
+    c = []
+    for key in mols:
+        if key in consts:
+            c.append( key )
+        else:
+            s.append( key )
+    return s, c
 
-    return mols
+def convConst( consts, value ):
+    if isinstance( value, str ):
+        ret  = consts.get( value )
+        if ret:
+            return ret
+        else:
+            raise( ValueError( "Error: Const '{}' not found.".format( value ) ) )
 
+    return value
 
 def parseModel( jsonDict ):
     model = ht.Model()
+    consts = jsonDict.get( "Constants" )
+    if not consts:
+        consts = {}
     eqnSubs = {}
-
     # First, pull together all the species names. They crop up in
     # the Species, the Reacs, and the Eqns. They should be used as
     # an index to the conc and concInit vector.
@@ -147,14 +194,14 @@ def parseModel( jsonDict ):
     for grpname, grp in jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
-                subs = extractSubs( expr )
+                subs, cs = extractSubs( expr, consts )
+                eqnSubs[ lhs ] = [ subs, cs ]
                 for subname in subs:
                     model.makeMol( subname, grpname, order=0)
 
                 #model.makeEqn( lhs, grpname, expr )
                 #ei[lhs] = ht.EqnInfo( lhs, grpname, expr )
                 model.makeMol( lhs, grpname, order=-1)
-                eqnSubs[ lhs ] = subs
                 #mi[lhs] = ht.MolInfo( lhs, grpname, order=-1)
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
@@ -163,6 +210,7 @@ def parseModel( jsonDict ):
     for grpname, grp in jsonDict['Groups'].items():
         if "Species" in grp:
             for molname, conc in grp['Species'].items():
+                conc = convConst( consts, conc )
                 model.makeMol( molname, grpname, order=0, concInit = conc )
                 #mi[molname] = ht.MolInfo( molname, grpname, order=0, concInit = conc )
                 grp['Species'][molname] = conc
@@ -176,18 +224,27 @@ def parseModel( jsonDict ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 subs = reac['subs']
-                # Hideous hack to interface with model::makeReac, which
+                convReac = { key: convConst( consts, val ) for key,val in reac.items() }
+                # hack to interface with model::makeReac, which
                 # expects all args in reac to be floats.
-                reac['subs'] = 0.0 
-                model.makeReac( reacname, grpname, subs, reac )
-                reac['subs'] = subs
+                convReac['subs'] = 0.0
+                model.makeReac( reacname, grpname, subs, convReac )
 
     # Now set up the equation, again, we need the mols defined.
     for grpname, grp in jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
-                subs = eqnSubs[ lhs ]
-                model.makeEqn( lhs, grpname, expr, subs )
+                e = expr
+                subs = eqnSubs[ lhs ][0]
+                cs = eqnSubs[lhs][1]
+                # Replace the constant names with their values
+                for name in cs:
+                    val = consts.get( name )
+                    if val:
+                        e = e.replace( name, str( val ) )
+                    else:
+                        raise( ValueError( "Error: unknown const '{}' in equation '{    }'".format( name, expr ) ) )
+                model.makeEqn( lhs, grpname, e, subs )
 
     model.allocConc()
     sortReacs( model )
@@ -274,6 +331,7 @@ def main():
     'and optionally does simple stimulus specification and plotting\n')
     parser.add_argument( 'model', type = str, help='Required: filename of model, in JSON format.')
     parser.add_argument( '-r', '--runtime', type = float, help='Optional: Run time for model, in seconds. If flag is not set the model is not run and there is no display', default = 0.0 )
+    parser.add_argument( '-dt', '--dt', type = float, help='Optional: Time step for model calculations, in seconds. If this argument is not set the code calculates dt to be a round number about 1/100 of runtime.', default = -1.0 )
     parser.add_argument( '-s', '--stimulus', type = str, nargs = '+', action='append', help='Optional: Deliver stimulus as follows: --stimulus molecule conc [start [stop]]. Any number of stimuli may be given, each indicated by --stimulus. By default: start = 0, stop = runtime', default = [] )
     parser.add_argument( '-p', '--plots', type = str, help='Optional: plot just the specified molecule(s). The names are specified by a comma-separated list.', default = "" )
     args = parser.parse_args()
@@ -286,9 +344,12 @@ def main():
     if runtime <= 0.0:
         return
 
-    model.dt = 10 ** (np.floor( np.log10( runtime )) - 2.0)
-    if runtime / model.dt > 500:
-        model.dt *= 2
+    if args.dt < 0:
+        model.dt = 10 ** (np.floor( np.log10( runtime )) - 2.0)
+        if runtime / model.dt > 500:
+            model.dt *= 2
+    else:
+        model.dt = args.dt
 
     stimvec = []
     
@@ -326,7 +387,9 @@ def main():
     else: 
         clPlots = [ i for i in model.molInfo ]
 
-    qu = jsonDict.get( "quantityUnits" )
+    qu = jsonDict.get( "QuantityUnits" )
+    if not qu:
+        qu = jsonDict.get( "quantityUnits" )
     if qu:
         ylabel = 'Conc ({})'.format( qu )
         qs = lookupQuantityScale[qu]

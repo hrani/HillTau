@@ -327,6 +327,9 @@ def scaleDict( jsonDict, qs ):
                 bl = reac.get( "baseline" )
                 if bl:
                     scaleConst( reac, "baseline", qs, consts, constDone )
+                kmod = reac.get( "Kmod" )
+                if kmod:
+                    scaleConst( reac, "Kmod", qs, consts, constDone )
 
 def extractSubs( expr, consts ):
     # This function extracts the molecule names from a math expression.
