@@ -23,13 +23,19 @@ PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
-MolInfo::MolInfo( const std::string& name_, const std::string& grp_, int order_ = 0, double concInit_ = 0.0 ):
+MolInfo::MolInfo( const std::string& name_, const std::string& grp_, double concInit_ = -1.0 ):
 	name(name_),
 	grp( grp_ ),
-	order( order_),
-	concInit( concInit_ ),
+	order( 0 ),
 	index( 0 )
 {
+		if ( concInit_ < 0.0 ) {
+			concInit = 0.0;
+			explicitConcInit = false;
+		} else {
+			concInit = concInit_;
+			explicitConcInit = true;
+		}
 };
 
 
@@ -63,6 +69,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	}
 	reagIndex = molInfo.at( subs[0] )->index;
 	hillIndex = molInfo.at( subs.back() )->index;
+	overrideConcInit = !molInfo.at( name )->explicitConcInit;
 	int numUnique = 1;
 	if ( reagIndex != hillIndex ) { // At least two subs
 		if (subs.size() == 2) {
@@ -330,32 +337,21 @@ void Model::makeReac( const string & name, const string & grp,
 {
 	auto r = new ReacInfo( name, grp, subs, reacObj, molInfo );
 	reacInfo[ name ] = r;
-	if ( molInfo[name]->order == -1 ) {
-		// If the molecule represented by the reac has already been defined,
-		// we use its original concInit. If not, we need to override the
-		// concInit with a value estimated from steady-state level of reac.
-		r->overrideConcInit = true;
-		if ( r->inhibit ) {
-			concInit[ r->prdIndex ] = r->concInf( concInit ) + r->baseline;
-			if ( concInit [ r->prdIndex ] < 0.0 )
-				concInit [ r->prdIndex ] = 0.0;
-		} else {
-			concInit[ r->prdIndex ] = r->baseline;
-		}
-	}
+	// If it is a reac, then by definition we don't yet know its order
+	molInfo[name]->order = -1;
 }
-void Model::makeMol( const string & name, const string & grp, int order, double concInit, bool preserveConcInit = false )
 
+void Model::makeMol( const string & name, const string & grp, double concInit = -1.0 )
 {
 	auto mi = molInfo.find( name );
 	if ( mi == molInfo.end() ) { // Make new one.
-		auto m = new MolInfo( name, grp, order, concInit );
+		auto m = new MolInfo( name, grp, concInit );
 		m->index = molInfo.size();
 		molInfo[ name ] = m;
-	} else if (!preserveConcInit ) {
+	} else if ( concInit >= 0.0 ) {
 		// Could be the second pass assignment of species with concInits.
 		mi->second->concInit = concInit;
-		mi->second->order = order;
+		mi->second->explicitConcInit = true;
 	}
 }
 
@@ -364,4 +360,6 @@ void Model::makeEqn( const string & name, const string & grp, const string& expr
 {
 	auto e = new EqnInfo( name, grp, expr, eqnSubs, molInfo, conc );
 	eqnInfo[ name ] = e;
+	molInfo[ name ]->order = 0; // We assume that eqns do not cascade. 
+	// We evaluate all eqns after all the reacs are done, so 0 is good
 }

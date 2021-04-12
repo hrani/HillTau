@@ -188,7 +188,7 @@ def parseModel( jsonDict ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 for subname in reac["subs"]:
-                    model.makeMol( subname, grpname, order=0)
+                    model.makeMol( subname, grpname )
                     #mi[subname] = ht.MolInfo( subname, grpname, order=0)
 
     for grpname, grp in jsonDict['Groups'].items():
@@ -197,21 +197,21 @@ def parseModel( jsonDict ):
                 subs, cs = extractSubs( expr, consts )
                 eqnSubs[ lhs ] = [ subs, cs ]
                 for subname in subs:
-                    model.makeMol( subname, grpname, order=0)
+                    model.makeMol( subname, grpname )
 
                 #model.makeEqn( lhs, grpname, expr )
                 #ei[lhs] = ht.EqnInfo( lhs, grpname, expr )
-                model.makeMol( lhs, grpname, order=-1)
+                model.makeMol( lhs, grpname )
                 #mi[lhs] = ht.MolInfo( lhs, grpname, order=-1)
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
-                model.makeMol( reacname, grpname, order=-1 )
+                model.makeMol( reacname, grpname )
 
     for grpname, grp in jsonDict['Groups'].items():
         if "Species" in grp:
             for molname, conc in grp['Species'].items():
                 conc = convConst( consts, conc )
-                model.makeMol( molname, grpname, order=0, concInit = conc )
+                model.makeMol( molname, grpname, concInit = conc )
                 #mi[molname] = ht.MolInfo( molname, grpname, order=0, concInit = conc )
                 grp['Species'][molname] = conc
 
@@ -252,19 +252,21 @@ def parseModel( jsonDict ):
     return model
 
 def breakReacLoop( model, maxOrder, numLoopsBroken  ):
-    for reacname, reac in model.reacInfo.items():
+    for reacname, reac in sorted( model.reacInfo.items() ):
         if model.molInfo[reacname].order < 0:
             model.molInfo[reacname].order = maxOrder
-            #print( "    FIX_Reac ORDER = ", reacname, " ", maxOrder)
+            #print( " BREAK LOOP on ", reacname, " ", maxOrder)
             #print("Warning; Reaction order loop. Breaking {} loop for {}, assigning order: {}".format( numLoopsBroken, reacname, maxOrder ) )
             return
 
+'''
 def breakEqnLoop( model, maxOrder, numLoopsBroken  ):
     for eqname, eqn in model.eqnInfo.items():
         if model.molInfo[eqname].order < 0:
             model.molInfo[eqname].order = maxOrder
             #print( "    FIX_Eqn ORDER = ", eqname, " ", maxOrder)
             return
+'''
 
 def sortReacs( model ):
     # Go through and assign levels to the mols and reacs within a group.
@@ -289,11 +291,15 @@ def sortReacs( model ):
                     maxOrder = max( maxOrder, mo )
                     numOrdered += 1
                     stuck = False
-        #print ( "               numOrdered = ", numOrdered, " / ", numReac )
+        #print ( "numOrdered = ", numOrdered, " / ", numReac, " max = ", maxOrder )
         if stuck:
             breakReacLoop( model, maxOrder+1, numLoopsBroken )
             numLoopsBroken += 1
 
+    # We don't need to sort equations, because they do not cascade.
+    # They are all executed in a bunch after the reacs, at which point
+    # there should be no unknowns
+    '''
     numEqn = len( model.eqnInfo )
     numOrdered = 0
     while numOrdered < numEqn: 
@@ -315,6 +321,7 @@ def sortReacs( model ):
         if stuck:
             breakEqnloop( model, maxOrder+1, numLoopsBroken )
             numLoopsBroken += 1
+    '''
 
     maxOrder += 1
     model.setReacSeqDepth( maxOrder )

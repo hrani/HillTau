@@ -66,11 +66,17 @@ class Stim():
 
 
 class MolInfo():
-    def __init__( self, name, grp, order = 0, concInit = 0.0 ) :
+    def __init__( self, name, grp, concInit = -1.0 ) :
         self.name = name
         self.grp = grp
-        self.concInit = concInit
-        self.order = order  # First pass: species, subs:0 Reac or Eqn -1
+        if concInit < 0.0:
+            self.concInit = 0.0
+            self.explicitConcInit = False
+        else:
+            self.concInit = concInit
+            self.explicitConcInit = True
+        self.order = 0  # Start out all zero
+                        # First pass: 0 Reac or Eqn set to -1
                         # Second pass: cumulative order depending on subs
         self.index = 0  # Points to the conc and concInit vectors
         #print( "MolInfo {}: concInit = {}".format( name, concInit ) )
@@ -92,6 +98,7 @@ class ReacInfo():
         self.Kmod = 1.0
         self.modIndex = 0
         self.gain = 1.0
+        self.overrideConcInit = not molInfo[ name ].explicitConcInit
         Kmod = reacObj.get( "Kmod" )
         numUnique = len( set( self.subs ) )
         self.oneSub = (numUnique == 1)
@@ -240,8 +247,9 @@ class Model():
                 break
             if runtime - t < dt:
                 dt = runtime - t
-            for name, val in self.reacInfo.items():
-                val.eval( self, dt )
+            for ar in self.sortedReacInfo:
+                for r in ar:
+                    r.eval( self, dt )
             for name, val in self.eqnInfo.items():
                 val.eval( self.conc )
             # This is a tricky aspect of Python: unless you force a copy of
@@ -256,14 +264,14 @@ class Model():
         self.currentTime = 0
         for ar in self.sortedReacInfo:
             for r in ar:
-                if self.molInfo[ r.name ].order < 0:
+                if r.overrideConcInit:
                     if r.inhibit:
                         self.concInit[ r.prdIndex ] = r.concInf( self.concInit ) + r.baseline
                         if self.concInit[r.prdIndex] < 0.0:
                             self.concInit[r.prdIndex] = 0.0
-
                     else:
                         self.concInit[ r.prdIndex ] = r.baseline
+
         # need to do this because Python defaults to shallow copy.
         # So if you change values in conc, they will change in concInit
         self.conc = np.array( self.concInit )
@@ -398,24 +406,24 @@ def parseModel( jsonDict ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 for subname in reac["subs"]:
-                    model.molInfo[subname] = MolInfo( subname, grpname, order=0)
+                    model.molInfo[subname] = MolInfo( subname, grpname)
 
     for grpname, grp in model.jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
                 subs, cs = extractSubs( expr, model.consts )
                 for subname in subs:
-                    model.molInfo[subname] = MolInfo( subname, grpname, order=0 )
-                model.molInfo[lhs] = MolInfo( lhs, grpname, order=-1)
+                    model.molInfo[subname] = MolInfo( subname, grpname)
+                model.molInfo[lhs] = MolInfo( lhs, grpname)
                 model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr, subs, cs )
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
-                model.molInfo[reacname] = MolInfo( reacname, grpname, order=-1 )
+                model.molInfo[reacname] = MolInfo( reacname, grpname)
 
     for grpname, grp in model.jsonDict['Groups'].items():
         if "Species" in grp:
             for molname, conc in grp['Species'].items():
-                model.molInfo[molname] = MolInfo( molname, grpname, order=0, concInit = convConst( model.consts, conc ) )
+                model.molInfo[molname] = MolInfo( molname, grpname, concInit = convConst( model.consts, conc ) )
                 grp['Species'][molname] = convConst( model.consts, conc )
 
     # Then assign indices to these unique molnames, and build up the
@@ -435,59 +443,59 @@ def parseModel( jsonDict ):
             for reacname, reac in grp['Reacs'].items():
                 r = ReacInfo( reacname, grpname, reac, model.molInfo, model.consts )
                 model.reacInfo[reacname] = r
-                # Eval concInit ONLY if it is not explicitly defined.
-                if model.molInfo[ reacname ].order == -1:
-                    if r.inhibit:
-                        model.concInit[ r.prdIndex ] = r.concInf( model.concInit ) + r.baseline
-                        if model.concInit[r.prdIndex] < 0.0:
-                            #print( "oops, starting -ve:", r.name, self.concInit[r.prdIndex] )
-                            model.concInit[r.prdIndex] = 0.0
-                    else:
-                        model.concInit[ r.prdIndex ] = r.baseline
+                model.molInfo[ reacname ].order = -1
 
     # Now set up the equation, again, we need the mols defined.
     for eqname, eqn in model.eqnInfo.items():
         eqn.parseEqn( model.molInfo, model.consts )
 
-    model.reinit()
     sortReacs( model )
+    model.reinit()
     return model
 
 def breakloop( model, maxOrder, numLoopsBroken  ):
-    for reacname, reac in model.reacInfo.items():
+    for reacname, reac in sorted( model.reacInfo.items() ):
         if model.molInfo[reacname].order < 0:
             model.molInfo[reacname].order = maxOrder
             #print("Warning; Reaction order loop. Breaking {} loop for {}, assigning order: {}".format( numLoopsBroken, reacname, maxOrder ) )
-            break
+            return
 
 def sortReacs( model ):
     # Go through and assign levels to the mols and reacs within a group.
     # This will be used later for deciding evaluation order.
-    numOrdered = sum( [ ( m.order >= 0 ) for m in model.molInfo.values() ] )
     maxOrder = 0
     numLoopsBroken = 0
-    while numOrdered < len( model.molInfo ): 
+    numOrdered = 0
+    numReac = len( model.reacInfo )
+    while numOrdered < numReac: 
+        numOrdered = 0
         stuck = True
         for reacname, reac in sorted( model.reacInfo.items() ):
-            order = [ model.molInfo[i].order for i in reac.subs ]
-            #print( "{}@{}: {}".format( reacname, model.molInfo[reacname].order, order ) )
-            if min( order ) >= 0:
-                mo = max( order ) + 1
-                model.molInfo[reacname].order = mo
-                maxOrder = max( maxOrder, mo )
+            prevOrder = model.molInfo[reacname].order
+            maxOrder = max( maxOrder, prevOrder )
+            if prevOrder >= 0:
                 numOrdered += 1
-                stuck = False
+            else:
+                order = [ model.molInfo[i].order for i in reac.subs ]
+                if min( order ) >= 0:
+                    mo = max( order ) + 1
+                    model.molInfo[reacname].order = mo
+                    maxOrder = max( maxOrder, mo )
+                    numOrdered += 1
+                    stuck = False
+        #print ( "numOrdered = ", numOrdered, " / ", numReac, " max = ", maxOrder )
         if stuck:
-            breakloop( model, maxOrder, numLoopsBroken )
+            breakloop( model, maxOrder+1, numLoopsBroken )
             numLoopsBroken += 1
-            #quit()
 
+        '''
         for eqname, eqn in sorted( model.eqnInfo.items() ):
             order = [ model.molInfo[i].order for i in eqn.subs ]
             model.molInfo[eqname].order = max(order)
+        '''
 
     maxOrder += 1
-    model.sortedReacInfo = [[]] * maxOrder    
+    model.sortedReacInfo = [[] for i in range( maxOrder )]
     for name, reac in model.reacInfo.items():
         order = model.molInfo[name].order
         model.sortedReacInfo[order].append( reac )

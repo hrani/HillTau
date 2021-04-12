@@ -12,12 +12,13 @@ class Model;
 class MolInfo
 {
 	public:
-			MolInfo( const string& name, const string& grp, int order, double concInit );
+			MolInfo( const string& name, const string& grp, double concInit );
 			string name;
 			string grp;
 			int order;
 			double concInit;
 			unsigned int index;
+			bool explicitConcInit;
 };	
 
 class ReacInfo
@@ -82,7 +83,7 @@ class Model
 			vector< double > concInit;
 			vector< vector< double > > plotvec;
 			
-			void makeMol( const string & name, const string & grp, int order, double concInit, bool preserveConcInit );
+			void makeMol( const string & name, const string & grp, double concInit );
 			void makeReac( const string & name, const string & grp, const vector< string >& subs, const map< string, double >& reacObj );
 			void makeEqn( const string & name, const string & grp, const string& expr, const vector< string >& eqnSubs );
 			void setReacSeqDepth( int order );

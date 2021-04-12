@@ -8,7 +8,7 @@ ERR_LIMIT = 1e-6
 stimVec = [
     ["exc", "input", [1e-3, 10, 0, 20], "output", [0.2638e-3, 10.75, 0.5e-3, 20, 0.0, 30]],
     ["inh", "input", [1e-3, 10, 0, 20], "output", [0.7362e-3, 10.75, 0.5e-3, 20, 1e-3, 30]],
-    ["osc", "mol", [], "output", [0.4002e-3, 500, 0.2909e-3, 2000, 0.10136e-3, 3000]],
+    ["osc", "mol", [], "output", [0.3968e-3, 500, 0.2948e-3, 2000, 0.1008e-3, 3000]],
     ["bcm", "Ca", [0.01e-3, 0, 0.5e-3, 20, 2e-3, 40, 10e-3, 60], "synAMPAR", [0.384e-3, 15, 0.189e-3, 35, 0.391e-3, 55, 0.503e-3, 75]],
     ["eqn", "input", [1e-3, 10, 0, 20], "eq", [3.46e-3, 10.75, 3.7e-3, 15, 1.2e-3, 30]],
     ["eqn_with_constants", "input", [1e-3, 10, 0, 20], "eq", [3.46e-3, 10.75, 3.7e-3, 15, 1.2e-3, 30]],
@@ -16,7 +16,7 @@ stimVec = [
     ["conv", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["conv2ndOrder", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["exc_tau_baseline", "input", [1e-3, 10, 0, 20], "output", [0.7638e-3, 10.75, 1.0e-3, 20, 0.684e-3, 25]],
-    ["ff_inhib", "input", [1e-3, 10, 0, 20], "output", [0.3535e-3, 12.3, 0.2549e-3, 20, 0, 30]],
+    ["ff_inhib", "input", [1e-3, 10, 0, 20], "output", [0.29e-3, 15, 0.254e-3, 20, 0, 30]],
     ["fb_inhib", "input", [1e-3, 10, 0, 20], "output", [0.409e-3, 12.7, 0.2686e-3, 20, 0, 30]],
     ["gain", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["modifier", "input", [1e-3, 10, 0, 20], "output", [0.3513e-3, 10.75, 0.667e-3, 20, 0.0, 30]],
@@ -44,7 +44,7 @@ def runit( f ):
     qs = hillTau.getQuantityScale( jsonDict )
     hillTau.scaleDict( jsonDict, qs )
     model = hillTau.parseModel( jsonDict )
-    model.dt = 10.0
+    model.dt = 1.0
 
     ev = []
     ev.extend( parseEvents( f[1], f[2], 1 ) )
