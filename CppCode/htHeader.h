@@ -40,10 +40,13 @@ class ReacInfo
 			int prdIndex;
 			double kh;
 			double HillCoeff;
-			double concInf( const vector< double >& conc ) const;
-			double eval( Model* model, double dt ) const;
 			bool overrideConcInit;
 			vector< string > subs;
+
+			double concInf( const vector< double >& conc ) const;
+			double eval( Model* model, double dt ) const;
+			double getKA() const;
+			void setKA( double val );
 
 	private:
 			unsigned int hillIndex;

@@ -59,7 +59,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	subs( subs_ ),
 	hillIndex( 0 ),
 	reagIndex( 0 ),
-	modIndex( 0 ),
+	modIndex( ~0U ),
 	oneSub( false )
 {
 	tau2 = tau;
@@ -116,6 +116,15 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	}
 }
 
+void ReacInfo::setKA( double val ) {
+	KA = val;
+	kh = pow( KA, HillCoeff);
+}
+
+double ReacInfo::getKA() const {
+	return KA;
+}
+
 double ReacInfo::eval( Model* model, double dt ) const
 {
 	double orig = model->conc[ prdIndex ] - baseline;
@@ -137,7 +146,7 @@ double ReacInfo::concInf( const vector< double >& conc ) const
 {
 	double h = pow( conc[ hillIndex ], HillCoeff );
 	double mod = 1.0;
-	if ( modIndex != 0 ) {
+	if ( modIndex != ~0U ) {
 		mod = conc[ modIndex ] / Kmod;
 	}
 	if ( oneSub ) {

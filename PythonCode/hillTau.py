@@ -85,7 +85,7 @@ class ReacInfo():
     def __init__( self, name, grp, reacObj, molInfo, consts ):
         self.name = name
         self.grp = grp
-        self.KA = convConst( consts, reacObj["KA"] )
+        self._KA = convConst( consts, reacObj["KA"] )
         self.tau = convConst( consts, reacObj["tau"] )
         self.tau2 = self.tau
         self.prdIndex = molInfo[ name ].index
@@ -96,7 +96,7 @@ class ReacInfo():
         self.hillIndex = molInfo[ self.subs[-1] ].index
         self.reagIndex = molInfo[ self.subs[0] ].index
         self.Kmod = 1.0
-        self.modIndex = 0
+        self.modIndex = -1
         self.gain = 1.0
         self.overrideConcInit = not molInfo[ name ].explicitConcInit
         Kmod = reacObj.get( "Kmod" )
@@ -110,7 +110,7 @@ class ReacInfo():
             raise( ValueError( "Error: Reaction {} has <=2 reagents, expecting 3 since Kmod specified for modifier.".format( name ) ) )
         self.HillCoeff = len( self.subs ) + 1 - numUnique
         # Hill Coeff applies only to the last mol in the list.
-        self.kh = self.KA ** self.HillCoeff # Precompute it.
+        self.kh = self._KA ** self.HillCoeff # Precompute it.
         self.inhibit = 0
         inh = reacObj.get( "inhibit" )
         if inh and inh != 0:
@@ -125,7 +125,6 @@ class ReacInfo():
         if Kmod: # Various validity checks have been done above
             self.Kmod = convConst( consts, Kmod )
             self.modIndex = molInfo[ self.subs[1] ].index
-            self.kh = self.KA ** self.HillCoeff # Precompute it.
         gain = reacObj.get( "gain" )
         if gain:
             self.gain = convConst( consts, gain )
@@ -134,12 +133,12 @@ class ReacInfo():
 
     def concInf( self, conc ):
         h = conc[self.hillIndex] ** self.HillCoeff
-        if self.modIndex != 0:
+        if self.modIndex != -1:
             mod = conc[ self.modIndex ] / self.Kmod
         else:
             mod = 1.0
         if self.oneSub: # this really only works for A<=>B and 2A<=>B
-            return h / self.KA
+            return h / self._KA
         s = conc[ self.reagIndex ] * self.gain
         h *= mod
         if self.inhibit:
@@ -169,6 +168,15 @@ class ReacInfo():
     
     def getReacField( self, field ):
         return 0.0
+
+    @property
+    def KA( self ):
+        return self._KA
+
+    @KA.setter
+    def KA( self, val ):
+        self._KA = val
+        self.kh = self._KA ** self.HillCoeff # Precompute it.
 
 class EqnInfo():
     def __init__( self, name, grp, eqnStr, subs, cs ):

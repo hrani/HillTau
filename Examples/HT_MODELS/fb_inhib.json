@@ -10,11 +10,11 @@
             "Species": { "mol": 1.0 }, 
             "Reacs": {
                 "output": {
-                    "tau": 2, "tau2": 15, "KA": 0.005, "Kmod": 0.005, 
+                    "tau": 2, "tau2": 10, "KA": 0.1, "Kmod": 0.045, 
                     "subs": [ "mol", "fb", "input" ]
                 }, 
                 "fb": {
-                    "tau": 1.5, "KA": 0.01, "inhibit": 1,
+                    "tau": 1, "KA": 0.001, "inhibit": 1, "baseline": 0.001,
                     "subs": [ "mol", "output", "output" ]
                 }
             }

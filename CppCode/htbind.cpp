@@ -31,7 +31,7 @@ PYBIND11_MODULE(ht, m) {
 			py::init<const std::string &, const std::string &, const vector< string >&, const map< string, double>&, const map< string, MolInfo*>&>())
 		.def_readwrite("name", &ReacInfo::name)
 		.def_readwrite("grp", &ReacInfo::grp)
-		.def_readwrite("KA", &ReacInfo::KA)
+		.def_property("KA", &ReacInfo::getKA, &ReacInfo::setKA)
 		.def_readwrite("tau", &ReacInfo::tau)
 		.def_readwrite("tau2", &ReacInfo::tau2)
 		.def_readwrite("Kmod", &ReacInfo::Kmod)
