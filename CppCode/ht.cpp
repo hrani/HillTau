@@ -249,6 +249,7 @@ double EqnInfo::eval( vector< double >& conc ) const
 Model::Model()
 	: 
 			currentTime( 0.0 ),
+			step( 0 ),
 			dt( 1.0 )
 {;}
 
@@ -268,36 +269,32 @@ void Model::assignReacSeq( const string& name, int seq )
 
 void Model::advance( double runtime, int settle )
 {
-	if (runtime < 1e-6) return;
+	if (runtime < 10e-6) return;
 	double newdt = dt;
-	int ratio = 1;
 	if (settle) {
 		newdt = runtime / 10.0;
-		ratio = 10;
 	} else {
 		if ( dt >= runtime / 2.0 )
 			newdt = pow( 10.0, floor( log10( runtime / 2.0 ) ) );
-		ratio = int( round( dt / newdt ) );
 	}
 
-	int i = 0;
 	for (double t = 0.0; t < runtime; t += newdt ) {
-		double ndt = newdt;
-		if ( newdt > (runtime - t) * 1.0000001 )
-			ndt = runtime - t;
+		if ( newdt > (runtime - t) )
+			newdt = runtime - t;
 		for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); 
 						r++) {
 			for (auto ri = r->begin(); ri != r->end(); ri++ ) {
-				(*ri)->eval( this, ndt );
+				(*ri)->eval( this, newdt );
 			}
 		}
 		for (auto e = eqnInfo.begin(); e != eqnInfo.end(); ++e ) {
 			e->second->eval( conc );
 		}
-		if ( i % ratio == 0 ) {
+
+		if ( floor( (currentTime + t + newdt ) / dt ) > step ) {
 			plotvec.push_back( conc );
+			step += 1;
 		}
-		i++;
 	}
 	currentTime += runtime;
 }
@@ -317,6 +314,8 @@ void Model::reinit()
 	// as is. This is happens if ReacInfo::overrideConcInit is false.
 	// Any others need to be estimated from the steady-state 
 	// value of the reacns.
+	currentTime = 0.0;
+	step = 0;
 	for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); r++) {
 		for (auto ri = r->begin(); ri != r->end(); ri++) {
 			if ( (*ri)->overrideConcInit ) {

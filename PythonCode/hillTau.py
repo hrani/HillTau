@@ -221,6 +221,7 @@ class Model():
         self.eqnInfo = {}
         self.sortedReacInfo = []
         self.currentTime = 0.0
+        self.step = 0
         self.conc = np.zeros(1)
         self.concInit = np.zeros(1)
         self.plotvec = []
@@ -234,42 +235,42 @@ class Model():
         self.conc[idx] = val
     '''
     def advance( self, runtime, settle = False ):
-        if runtime < 10e-6:
+        if runtime < 10.0e-6:
             return
         if settle: 
             # This is used when we are doing a steady-state calc. Since
             # HillTau does this anyway, we jump fast. Only issue arises
             # if there are feedback processes. So to be conservative, 
             # do 10 steps. 
-            dt = runtime / 10.0
-            ratio = 10 
+            newdt = runtime / 10.0
         else:
-            dt = self.dt
-            if dt >= runtime / 2.0:
-                dt = 10 ** ( np.floor( np.log10( runtime / 2.0 ) ) )
-                #print( "adjusting local dt to ", dt, " from ", runtime )
-            ratio = int( np.round( self.dt / dt ) )
-        i = 0
-        for t in np.arange( 0.0, runtime * 1.00001, dt ):
-            if t >= runtime:
-                break
-            if runtime - t < dt:
-                dt = runtime - t
+            newdt = self.dt
+            if newdt >= runtime / 2.0:
+                newdt = 10.0 ** ( np.floor( np.log10( runtime / 2.0 ) ) )
+
+        # The above guarantees that newdt <= self.dt, except dose response
+        for t in np.arange( 0.0, runtime, newdt ):
+            # Sometimes we have runtimes that are not a multiple of self.dt
+            if ( runtime - t) < newdt:
+                newdt = runtime - t
+
+            # Here we advance the simulation
             for ar in self.sortedReacInfo:
                 for r in ar:
-                    r.eval( self, dt )
+                    r.eval( self, newdt )
             for name, val in self.eqnInfo.items():
                 val.eval( self.conc )
-            # This is a tricky aspect of Python: unless you force a copy of
-            # the self.conc array, it just appends a pointer to it.
-            if i % ratio == 0:
-                self.plotvec.append( np.array( self.conc ) )
-            i += 1
-        self.currentTime += runtime
 
+            # Here we decide if we insert data into the plots.
+            if np.floor( (self.currentTime + t + newdt)/ self.dt ) > self.step:
+                self.step += 1
+                self.plotvec.append( np.array( self.conc ) )
+        self.currentTime += runtime
+                
     def reinit( self ):
         # ConcInit is evaluated only for reactions not explicitly defined.
         self.currentTime = 0
+        self.step = 0
         for ar in self.sortedReacInfo:
             for r in ar:
                 if r.overrideConcInit:
