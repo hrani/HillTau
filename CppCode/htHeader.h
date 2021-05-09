@@ -96,6 +96,7 @@ class Model
 			void allocConc();
 			void parseEqns();
 			void reinit();
+			vector< double > getConcVec( int index ) const;
 	private:
 			vector< vector< const ReacInfo* > > sortedReacInfo;
 };

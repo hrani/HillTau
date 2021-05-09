@@ -452,11 +452,15 @@ def parseModel( jsonDict ):
             for reacname, reac in grp['Reacs'].items():
                 r = ReacInfo( reacname, grpname, reac, model.molInfo, model.consts )
                 model.reacInfo[reacname] = r
+                # Override group so that grp of product mol == grp of reac.
+                model.molInfo[ reacname ].grp = grpname
                 model.molInfo[ reacname ].order = -1
 
     # Now set up the equation, again, we need the mols defined.
     for eqname, eqn in model.eqnInfo.items():
         eqn.parseEqn( model.molInfo, model.consts )
+        # Override group so that grp of eqn output == grp of eqn.
+        model.molInfo[ eqname ].grp = eqn.grp
 
     sortReacs( model )
     model.reinit()
