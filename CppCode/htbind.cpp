@@ -73,6 +73,8 @@ PYBIND11_MODULE(ht, m) {
 		.def( "assignReacSeq", &Model::assignReacSeq, "Builds up sortedReacOrder vectors.")
 		.def( "advance", &Model::advance, "Advances the simulation", py::arg( "runtime" ), py::arg( "settle" ) = 0 )
 		.def( "reinit", &Model::reinit, "Reinits all conc values" )
-		.def( "allocConc", &Model::allocConc, "Allocates and initializes conc vectors" );
+		.def( "allocConc", &Model::allocConc, "Allocates and initializes conc vectors" )
+		.def( "getConcVec", &Model::getConcVec, "Returns vector of doubles of conc as a function of time for specified mol index." )
+		;
 }
 

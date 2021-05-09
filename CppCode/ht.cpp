@@ -347,6 +347,8 @@ void Model::makeReac( const string & name, const string & grp,
 	reacInfo[ name ] = r;
 	// If it is a reac, then by definition we don't yet know its order
 	molInfo[name]->order = -1;
+	// Override group of product mol it is == grp of reac.
+	molInfo[name]->grp = grp;
 }
 
 void Model::makeMol( const string & name, const string & grp, double concInit = -1.0 )
@@ -370,4 +372,16 @@ void Model::makeEqn( const string & name, const string & grp, const string& expr
 	eqnInfo[ name ] = e;
 	molInfo[ name ]->order = 0; // We assume that eqns do not cascade. 
 	// We evaluate all eqns after all the reacs are done, so 0 is good
+	// Override group of output mol it is == grp of reac.
+	molInfo[name]->grp = grp;
+}
+
+vector< double > Model::getConcVec( int index ) const
+{
+	vector< double > ret( plotvec.size() );
+	if ( plotvec.size() == 0 || plotvec[0].size() <= unsigned( index ) )
+		return ret;
+	for( unsigned int i = 0; i < ret.size(); ++i )
+		ret[i] = plotvec[i][index];
+	return ret;
 }

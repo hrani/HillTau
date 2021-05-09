@@ -26,22 +26,26 @@ python hillTau.py -h
 	reduced form. The hillTau program loads and checks HillTau models, and
 	optionally does simple stimulus specification and plotting
 	 
-	positional arguments:
+p	ositional arguments:
   	model                 Required: filename of model, in JSON format.
 	
 	optional arguments:
   	-h, --help            show this help message and exit
   	-r RUNTIME, --runtime RUNTIME
-	                       Optional: Run time for model, in seconds. If flag is
-	                       not set the model is not run and there is no display
+	                      Optional: Run time for model, in seconds. If flag is
+	                      not set the model is not run and there is no display
+	-dt DT, --dt DT       Optional: Time step for model calculations, in
+	                      seconds. If this argument is not set the code
+	                      calculates dt to be a round number about 1/100 of
+	                      runtime.
 	-s STIMULUS [STIMULUS ...], --stimulus STIMULUS [STIMULUS ...]
-	                       Optional: Deliver stimulus as follows: --stimulus
-	                       molecule conc [start [stop]]. Any number of stimuli
-	                       may be given, each indicated by --stimulus. By
-	                       default: start = 0, stop = runtime
+	                      Optional: Deliver stimulus as follows: --stimulus
+	                      molecule conc [start [stop]]. Any number of stimuli
+	                      may be given, each indicated by --stimulus. By
+	                      default: start = 0, stop = runtime
 	 -p PLOTS, --plots PLOTS
-	                       Optional: plot just the specified molecule(s). The
-	                       names are specified by a comma-separated list.
+	                      Optional: plot just the specified molecule(s). The
+	                      names are specified by a comma-separated list.
 ```
 
 
@@ -93,8 +97,9 @@ handled also in uM.
 
 ## Use of HillTau as a library
 
-HillTau is a Python script, so there are a lot of functions you can access
-if you want. Only a few are needed or recommended:
+HillTau provides a set of application functions (API) for use as a library.
+These are available both in the Pybind11/C++ and the Python versions. Other
+fields or functions may not be supported.
 
 1. loadHillTau( filename )
 
@@ -144,29 +149,49 @@ There are a couple of frequently used classes.
 **MolInfo**: 
 
 This class contains information about each molecule species. Relevant
-fields are name and index.
+fields are name, grp and index.
+
+1.	name<br>
+	This is a string and is the name of the molecule
+2.	grp<br> 
+	This is a string and is the name of the group in which the 
+	molecule resides. The group location obeys the following convention:
+
+	- All reaction products are located in the same group as their reaction.
+	- All equation outputs are located in the same group as their equation.
+	- Barring the above, any molecules initialized as 'Species' reside in 
+	  the group in which they are defined.
+	- Any molecules defined only as reaction substrates reside in the same
+	  group as their reaction.
+	- Any molecules defined only as equation terms reside in the same
+	  group as their equation.
+3.	index<br>
+	This is an integer. It looks up the molecule concentration in
+	the *model.conc* and *model.concInit* arrays.
 
 **Model**:
 
-The Model class exposes a few additional fields and functions.
+The Model class exposes a the following fields and functions.
 
 1.	model.molInfo. This is a dict of MolInfos. It is indexed by the name
 	of the molecule. The most common use is of the form
 	
-		```myIndex = input.molInfo.get( "MyMoleculeName" ).index```
+	```myIndex = input.molInfo.get( "MyMoleculeName" ).index```
 
 2.	model.conc. This is a numpy array of molecule concentrations, indexed
 	as using the molecule index. You can get or set it.
 
-		```
-		myConc = model.conc[myIndex]
-		model.conc[myIndex] = myConc * 2
-		```
+	```
+	myConc = model.conc[myIndex]
+	model.conc[myIndex] = myConc * 2
+	```
 
 
 3.	model.concInit. This is an array of molecule initial concentrations, 
 	indexed by the molecule index as above. At 
+
 	```model.reinit()```
+
 	the model.conc vector is initialized to model.concInit.
 
 4.	model.plotvec. This is a list of time-series values of all the
@@ -181,6 +206,23 @@ The Model class exposes a few additional fields and functions.
 
 6.	model.currentTime: Current time of simulation. User must not set it.
 
+7. 	model.getConcVec( molIndex )
+	This function returns the vector of output concentrations as a 
+	function of time, for the specified molecule. It is implemented for
+	vastly improved performance in the Pybind11/C++ version, as it
+	replaces Python transpose and lookup operations on the entire 
+	output matrix.
+
+	Argument (integer): molIndex. This is the index of the molecule in the
+	vector of concentrations of all molecules. It may be found from
+	*MolInfo::index*
+
+	Returns: Vector of output concentrations of specified molecule, as a
+	function of time.
+
+	Example: get concs vector for molecule "foo":
+
+	```concs = model.getConcVec( model.molInfo["foo"].index )```
 
 
 
@@ -190,18 +232,26 @@ HillTau uses a JSON format and this is fully specified by a schema file:
 
 	hillTauSchema.json
 
-It would in principle be possible to write HillTau models using SBML, though
-most SBML models are ODE models. In other words, regular SBML simulators would
+We have implemented a prototype read/write of HillTau models into SBML, but 
+this only can represent the structure of the model for examination by SBML
+editors and pathway illustrators, and is not designed for execution by other 
+SBML simulators. In other words, regular SBML simulators would
 not be able to compute HillTau models, nor would HillTau know what to do with
-most existing SBML models. Should there be sufficient interest in this
-I could take it up.
+most existing SBML models.
 
 ### Units
 
 HillTau uses seconds for time units.
 
-The **quantityUnits** property specifies one of ["M", "mM", "uM", "nM", "pM"]
+The **QuantityUnits** property specifies one of ["M", "mM", "uM", "nM", "pM"]
 as an optional unit for concentration. The default is mM.
+
+### Constants
+The *Constants* object has a list of name:value pairs for constants. These
+can replace any of the constants below for species initialization, reaction
+parameters, or equation terms. Except in the case of *Eqns*, the units are 
+as per the **QuantityUnits** above. In the case of *Eqns* the system 
+cannot infer what units the user intended, so it uses the values as is.
 
 ### Groups
 
@@ -220,29 +270,70 @@ In each group there can be further JSON objects, namely
 -	Reacs
 
 	Each of these is an object with:
-	-	Name
-
+	-	Name<br>
 		The Reaction name automatically becomes the name of the product
 		of the reaction. This product is like any other molecule and can
 		be used as a substrate in other reactions or equations.
-	-	subs[sub1, sub2...]
+	-	subs[sub1, sub2...]<br>
+		Required list of substrates (array of names). The first 
+		substrate is the *reagent*, **R**. The last substrate is 
+		the *ligand*, **L**. *L* can be repeated any number of times 
+		to denote the order **N** of the reaction.<br>
+		
+		```OutputSteadyState = (R * L^N)/(KA^N + L^N)```
 
-		Required list of substrates (array of names)
-	-	Reaction required parameters *KA* and *tau*, both floats.
-	-	Reaction optional parameters *tau2* and *baseline*, both floats.
-	-	Optional flag for *inhibit*: 0 or 1. Default is 0.
+		There is an optional 
+		middle substrate, the *modifier*, which scales the affinity
+		term *KA*, as follows:
+
+		```k = KA * mod/Kmod```
+
+	-	KA<br>
+		Association constant for reaction. Required. Float.
+	-	tau<br>
+		Time course for reaction. Required. Float.
+	-	tau2<br>
+		Time course for reaction decay. Optional. Defaults to same
+		as *tau*. Float.
+	-	baseline<br>
+		Baseline level of output of reaction. Optional. Defaults to 0.
+		Float.
+	-	gain<br>
+		Multiplier for output of reaction. Optional. Default is 1.
+	-	Inhibit<br>
+		Flag to indicate that the last substrate is an inhibitor.
+		0 or 1. Default is 0.
+	-	Kmod<br>
+		Optional. Float. Scaling constant for any modulator terms into 
+		reaction. Must be defined if there is a modulator, should not
+		be defined otherwise.
 -	Eqns
-	-	Name
-
+	-	Name<br>
 		The Equation name automatically becomes the name of a molecule
 		whose value is defined by the equation. This can be used as
 		a substrate in other reactions or equations.
-
-	-	Equation string
-
+	-	Equation string<br>
 		This is a string expressing an algebraic function to evaluate.
-		The function can use any named molecule, standard python 
-		operations, and numbers.
+		The function can use any named molecule, standard
+		mathematicsl operations and functions, named constants from the
+		**Constants** definition, and numbers.
+
+### Group Hierarchy
+*Reacs* and *Eqns* are only defined once in each model, so their
+location in a group is unambiguous. However, *Species* can be defined
+in many possible locations - directly as *Species*, implicitly as 
+substrates for *Reacs*, or indirectly as products of *Reacs* or
+outputs of *Eqns*. To resolve this. the group location of molecular
+*Species* obeys the following convention:
+
+- All reaction products are located in the same group as their Reac.
+- All equation outputs are located in the same group as their Eqn.
+- Barring the above, any molecules initialized as 'Species' reside in 
+  the group in which they are defined.
+- Any molecules defined only as reaction substrates reside in the same
+  group as their reaction.
+- Any molecules defined only as equation terms reside in the same
+  group as their equation.
 
 ### Species names and namespaces
 
@@ -274,26 +365,42 @@ by any number of downstream reactions that it may plug into. This differs
 fundamentally from chemical reactions. It greatly simplifies design of
 models and analysis of signal flow, because all information flow is forward.
 
-All calculations are done using simple Python functions. Despite this, the
-basic HillTau algorithm is so efficient that we have not yet felt the need
-to build a matching C++ library using pybind 11. This is on the cards and
-if anyone feels that this is essential they should let us know.
+HillTau now has a Pybind11/C++ version, which is ridiculously fast. We have
+benchmarked it at more than 3 orders of magnitude faster than COPASI for large
+equivalent ODE models.
+The Pybind11/C++ version is the default library for most users. There is 
+also a matching
+Python version, preserved for simplicity and to help people understand how it
+works. Even in the Python version, the basic HillTau algorithm is highly 
+efficient and much faster than ODE simulators for large models.
 
 ### HillTau outputs
 
-Output values for all molecules in a HillTau model are stored in the
+These are accessed from the **Model** class. Use the following options:
 
-	model.plotvec
+- model.plotvec<br>
+This is a 2-D array containing output values for all molecules in a HillTau 
+model. It is a list of numpy arrays holding all molecule concs at each 
+timestep: 
 
-field, which is a list of numpy arrays holding all molecule concs at each 
-timestep. Please see *Use of HillTau as a library*, above. One can also sample
-from the 
+	```model.plotvec[molIndex][timeIndex]```
 
-	model.conc
+- model.conc<br>
+This is a vector of the current concentrations of each of the
+species defined in the model. This is also documented above. One looks it up as:
 
-array, at each timestep. This is also documented above.
+	```model.conc[molIndex]```
 
 
+- model.getConcVec( molIndex )<br>
+This function returns the vector of output concentrations as a timeseries,
+for the specified molecule. It is implemented for
+vastly improved performance in the Pybind11/C++ version, as it
+replaces Python transpose and lookup operations on the entire 
+output matrix.<br>
+Example: get concs vector for molecule "foo":
+
+	```concs = model.getConcVec( model.molInfo["foo"].index )```
 
 
 

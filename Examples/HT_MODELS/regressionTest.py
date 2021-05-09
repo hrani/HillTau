@@ -71,16 +71,30 @@ def runit( f ):
     #print( "ANS = ", ans )
     for d in ans:
         err += d*d / ( maxconc * maxconc )
-    return err / len( ans )
+    return err / len( ans ), model
+
+def checkGroups( model ):
+    # Assumes that the last loaded model was bcm_bistable
+    grps = {"internal": "ampar_g", "synAMPAR": "ampar_g", "on_CaMKII":"CaMKII_g", "CaN":"CaN_g", "fb": "CaMKII_g"}
+    print( "Checking groups{:20s}".format( "" ), end = "....     " )
+    OK = True
+    for mol, grp in grps.items():
+        if model.molInfo[mol].grp != grp:
+            print( "failed, group of mol '{}' should be '{}', but is '{}'".format( mol, grp, model.molInfo[mol].grp ) )
+            OK = False
+    if OK:
+        print( "OK, all objects are in correct group" )
+
 
 def main():
     for s in stimVec:
         print( "Checking model {:20s}".format( s[0] ), end = "....     " )
-        err = runit( s )
+        err, model = runit( s )
         if err > ERR_LIMIT:
             print( "failed, err = {:.5g}".format( err ) )
         else:
             print( "OK, err = {:.5g}".format( err ) )
+    checkGroups( model )
 
 if __name__ == '__main__':
     main()
