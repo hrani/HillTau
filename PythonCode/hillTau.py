@@ -287,6 +287,10 @@ class Model():
         del self.plotvec[:]
         self.plotvec.append( np.array( self.conc ) )
 
+    def getConcVec( self, molIndex ):
+        return np.array( [ v[molIndex] for v in self.plotvec ] )
+
+
 def getQuantityScale( jsonDict ): 
     qu = jsonDict.get( "QuantityUnits" )
     qs = 1.0
