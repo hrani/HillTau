@@ -95,11 +95,22 @@ class ReacInfo():
             raise( ValueError( "Error: Reaction {} has zero reagents.".format( name ) ) )
         self.hillIndex = molInfo[ self.subs[-1] ].index
         self.reagIndex = molInfo[ self.subs[0] ].index
-        self.Kmod = 1.0
+        self.Kmod = 1.0 # This is the default halfmax of the modifier
+        self.Amod = 4.0 # This is the default alpha factor for modifier. 
+        # Values of Amod < 1 make it an inhibitory modifier. 
+        # Values of Amod > 1 are excitatory. Amod == 1 does not modify.
+        self.Nmod = 1.0 # This is the order of the modifier.
         self.modIndex = -1
+
         self.gain = 1.0
         self.overrideConcInit = not molInfo[ name ].explicitConcInit
         Kmod = reacObj.get( "Kmod" )
+        Amod = reacObj.get( "Amod" )
+        if Amod:
+            self.Amod = convConst( consts, Amod )
+        Nmod = reacObj.get( "Nmod" )
+        if Nmod:
+            self.Nmod = convConst( consts, Nmod )
         numUnique = len( set( self.subs ) )
         self.oneSub = (numUnique == 1)
         if numUnique > 3:
@@ -134,17 +145,17 @@ class ReacInfo():
     def concInf( self, conc ):
         h = conc[self.hillIndex] ** self.HillCoeff
         if self.modIndex != -1:
-            mod = conc[ self.modIndex ] / self.Kmod
+            x = pow( conc[ self.modIndex ] / self.Kmod, self.Nmod )
+            mod = ( 1.0 + x ) / ( 1.0 + self.Amod * x )
         else:
             mod = 1.0
         if self.oneSub: # this really only works for A<=>B and 2A<=>B
             return h / self._KA
         s = conc[ self.reagIndex ] * self.gain
-        h *= mod
         if self.inhibit:
-            return s * (1.0 - h / ( h + self.kh ) )
+            return s * (1.0 - h / ( h + self.kh * mod ) )
         else:
-            return s * h / ( h + self.kh )
+            return s * h / ( h + self.kh * mod )
 
     def concFracUp( self, t ):
         return 1.0 - np.exp( -t/self.tau )

@@ -11,9 +11,9 @@
 			"Species": {"mol1": 1.0, "mol2": 1.0 },
 			"Reacs": {
 				"output": {"subs": ["mol1","ff", "input"],
-					"KA": 1, "tau":1.0, "Kmod": 1 },
+					"KA": 0.1, "tau":0.5, "Kmod": 0.1, "Amod": 0.02, "Nmod": 4 },
 				"ff": {"subs": ["mol2","input"],
-					"KA": 0.5, "tau":2.0, "inhibit": 1 }
+					"KA": 0.1, "tau":20.0 }
 			}
 		}
 	}

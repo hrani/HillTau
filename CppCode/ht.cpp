@@ -48,7 +48,13 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	KA( reacObj.at("KA") ),
 	tau( reacObj.at("tau") ),
 	tau2( 1.0 ),
-	Kmod( 1.0 ),
+	Kmod( 1.0 ),	/// Default halfmax of modifier
+	Amod( 4.0 ),	/** Default alpha factor of modifier
+					** Values of Amod < 1 make it an inhibitory modifier
+					** Values of Amod > 1 make excitatory. 
+					** Amod == 1 does not modify
+					*/
+	Nmod( 1.0 ),	/// Order of modifier
 	gain( 1.0 ),
 	baseline( 0.0 ),
 	inhibit( 0 ),
@@ -106,6 +112,14 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	} else if ( numUnique == 3)  {
 		throw "Error: Reaction " + name + " has 3 reagents but no Kmod specified for modifier.\n";
 	}
+	auto a = reacObj.find( "Amod" );
+	if ( a != reacObj.end() ) {
+		Amod = a->second;
+	}
+	auto n = reacObj.find( "Nmod" );
+	if ( n != reacObj.end() ) {
+		Nmod = n->second;
+	}
 	auto b = reacObj.find( "baseline" );
 	if ( b != reacObj.end() ) {
 		baseline = b->second;
@@ -147,18 +161,19 @@ double ReacInfo::concInf( const vector< double >& conc ) const
 	double h = pow( conc[ hillIndex ], HillCoeff );
 	double mod = 1.0;
 	if ( modIndex != ~0U ) {
-		mod = conc[ modIndex ] / Kmod;
+		// mod = conc[ modIndex ] / Kmod;
+		double x = pow( conc[ modIndex ] / Kmod, Nmod );
+		mod = ( 1.0 + x ) / ( 1.0 + Amod * x );
 	}
 	if ( oneSub ) {
 		return h / KA;
 	}
 
 	double s = conc[ reagIndex ] * gain;
-	h *= mod;
 	if ( inhibit ) {
-		return s * (1.0 - h / (h + kh ) );
+		return s * (1.0 - h / (h + kh * mod ) );
 	} else {
-		return s * h / (h + kh);
+		return s * h / (h + kh * mod);
 	}
 }
 

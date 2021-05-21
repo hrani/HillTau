@@ -34,6 +34,8 @@ class ReacInfo
 			double tau;
 			double tau2;
 			double Kmod;
+			double Amod;
+			double Nmod;
 			double gain;
 			double baseline;
 			int inhibit;

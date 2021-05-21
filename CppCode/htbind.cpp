@@ -35,6 +35,8 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("tau", &ReacInfo::tau)
 		.def_readwrite("tau2", &ReacInfo::tau2)
 		.def_readwrite("Kmod", &ReacInfo::Kmod)
+		.def_readwrite("Amod", &ReacInfo::Amod)
+		.def_readwrite("Nmod", &ReacInfo::Nmod)
 		.def_readwrite("gain", &ReacInfo::gain)
 		.def_readwrite("baseline", &ReacInfo::baseline)
 		.def_readwrite("inhibit", &ReacInfo::inhibit)
