@@ -26,7 +26,7 @@ python hillTau.py -h
 	reduced form. The hillTau program loads and checks HillTau models, and
 	optionally does simple stimulus specification and plotting
 	 
-p	ositional arguments:
+	positional arguments:
   	model                 Required: filename of model, in JSON format.
 	
 	optional arguments:
@@ -244,7 +244,11 @@ most existing SBML models.
 HillTau uses seconds for time units.
 
 The **QuantityUnits** property specifies one of ["M", "mM", "uM", "nM", "pM"]
-as an optional unit for concentration. The default is mM.
+as an optional unit for concentration. The default is mM.<br>
+Example:
+	
+	"QuantityUnits": "uM"
+
 
 ### Constants
 The *Constants* object has a list of name:value pairs for constants. These
@@ -252,6 +256,13 @@ can replace any of the constants below for species initialization, reaction
 parameters, or equation terms. Except in the case of *Eqns*, the units are 
 as per the **QuantityUnits** above. In the case of *Eqns* the system 
 cannot infer what units the user intended, so it uses the values as is.
+Recommended way around this is a) to minimize use of equations, and b) if a 
+term represents something like a basal concentration, define it in the 
+Species list. This gives it clear units of concentration, and then the 
+*Constants* scaling will work. <br>
+Example:
+
+	"Constants": { "CaBaseline": 0.08, "KA": 1.5, "tau": 0.1 }
 
 ### Groups
 
@@ -266,10 +277,27 @@ In each group there can be further JSON objects, namely
 -	Species
 
 	This is a list of name:value pairs, to specify species name and its 
-	initial concentration.
+	initial concentration. Example:
+	
+		"Species": { "Ca": 0.08, "CaM": 10.0 }
+
 -	Reacs
 
-	Each of these is an object with:
+	This defines reaction steps in the model. In brief, it consists of a
+	substrate list followed by a parameter list. The output molecule of 
+	the reaction is defined automatically when a reaction is defined, and
+	it takes the same name as the reaction itself. This output molecule can
+	be used as a substrate in any other reaction.<br>
+	There are several optional parameters for each reaction. Example:
+
+			"aTRKb": {
+				"subs": [ "TRKb", "aS6K", "BDNF" ],
+				"KA": 7.7e-05, "tau": 70 "tau2": 1000,
+				"Kmod": 0.5, "Amod": 10e-06, "Nmod": 2,
+				"gain": 0.82, "baseline": 5e-06
+			}
+	
+	Each *Reac* is an object with:
 	-	Name<br>
 		The Reaction name automatically becomes the name of the product
 		of the reaction. This product is like any other molecule and can
@@ -278,15 +306,16 @@ In each group there can be further JSON objects, namely
 		Required list of substrates (array of names). The first 
 		substrate is the *reagent*, **R**. The last substrate is 
 		the *ligand*, **L**. *L* can be repeated any number of times 
-		to denote the order **N** of the reaction.<br>
+		to denote the order **N** of the reaction:
 		
-		```OutputSteadyState = (R * L^N)/(KA^N + L^N)```
+			OutputSteadyState = (R * L^N)/(KA^N + L^N)
 
 		There is an optional 
-		middle substrate, the *modifier*, which scales the affinity
-		term *KA*, as follows:
-
-		```k = KA * mod/Kmod```
+		middle molecule, the *modifier*. This is based on the analysis
+		by Hofmeyer and Cornish-Bowden 1997. 
+		It scales *KA* as follows:
+		
+			k = KA^n * (1+M/Kmod)^h/(1+Amod*(M/Kmod)^h)
 
 	-	KA<br>
 		Association constant for reaction. Required. Float.
@@ -304,10 +333,31 @@ In each group there can be further JSON objects, namely
 		Flag to indicate that the last substrate is an inhibitor.
 		0 or 1. Default is 0.
 	-	Kmod<br>
-		Optional. Float. Scaling constant for any modulator terms into 
-		reaction. Must be defined if there is a modulator, should not
-		be defined otherwise.
+		Optional. Float. Scaling constant for any modifier terms into 
+		reaction. Must be defined if there is a modifier, should not
+		be defined otherwise. Obeys the equation:
+		
+			k = KA^n * (1+M/Kmod)^h/(1+Amod*(M/Kmod)^h)
+
+	-	Amod<br>
+		Optional. Float. Action term for any modifier terms into 
+		reaction. The modifier acts in an inhibitory manner when 
+		Amod < 1, as an activator when Amod > 1, and has no effect when
+		Amod == 1. Default is 4.
+	-	Nmod<br>
+		Optional. Float. Power *h* to which the modifier fraction is 
+		raised. Default = 1.
 -	Eqns
+
+	This rarely-used feature defines functions for evaluation
+	in cases where the regular reaction structure does not suffice. The
+	evaluation is instantaneous, that is, there is no time-course 
+	associated with the output of an *Eqn*. Arguments to an equation can be
+	molecules, named constants, or numbers.<br>
+	Example:
+
+		"eq": "eqBase + eqScale * input + mol + output * 0.3"
+
 	-	Name<br>
 		The Equation name automatically becomes the name of a molecule
 		whose value is defined by the equation. This can be used as
@@ -350,6 +400,35 @@ subsequently defined as a *Reac* or as an *Eqn*. If this initialization
 is not done, then initial values the *Reac* and *Eqn* molecules are computed
 from the values of the input molecules at initialization time.
 
+### Complete example model
+
+Here is a complete example model, illustrating many of the features above:
+
+
+	{
+		"Author": "Upi Bhalla",
+		"Description": "Test case for Equation",
+		"Comment": "Conc units are microMolar, time units are seconds",
+		"QuantityUnits": "uM",
+		"Comment": "Note that HillTau can recognize and rescale units for constants which occur in reactions and species, but not in Eqns.",
+		"Constants": { "molBase": 1, "KA": 1, "tau": 1.0, "eqBase":0.0002, "eqScale": 2.0},
+		"Groups": {
+			"input_g": {
+				"Species": {"input": 0.0 }
+			},
+			"output_g": {
+				"Species": {"mol": "molBase" },
+				"Reacs": {
+					"output": {"subs": ["mol", "input"],
+							"KA": "KA", "tau": "tau" }
+				},
+				"Eqns": {
+					 "eq": "eqBase + eqScale * input + mol + output"
+				}
+			}
+		}
+	}
+
 
 ## HillTau calculations
 
@@ -365,9 +444,9 @@ by any number of downstream reactions that it may plug into. This differs
 fundamentally from chemical reactions. It greatly simplifies design of
 models and analysis of signal flow, because all information flow is forward.
 
-HillTau now has a Pybind11/C++ version, which is ridiculously fast. We have
-benchmarked it at more than 3 orders of magnitude faster than COPASI for large
-equivalent ODE models.
+HillTau now has a Pybind11/C++ version, which is extremely fast. We have
+benchmarked it at more than 3 orders of magnitude faster than COPASI or MOOSE
+for large equivalent ODE models.
 The Pybind11/C++ version is the default library for most users. There is 
 also a matching
 Python version, preserved for simplicity and to help people understand how it

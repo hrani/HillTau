@@ -89,6 +89,7 @@ class ReacInfo():
         self.tau = convConst( consts, reacObj["tau"] )
         self.tau2 = self.tau
         self.prdIndex = molInfo[ name ].index
+        molInfo[ name ].grp = grp # Put product molecule in same grp as reac
         self.subs = reacObj["subs"]
         assert( len( self.subs ) > 0 )
         if len( self.subs ) == 0:
@@ -200,6 +201,7 @@ class EqnInfo():
     def parseEqn( self, molInfo, globalConsts ):
         # Replace mol names with lookup index in molecule array, and func names with np.funcName.
         self.index = molInfo[self.name].index
+        molInfo[ self.name ].grp = self.grp # Put output molecule in same grp as eqn
         self.newEq = self.eqnStr
         for name in self.consts:
             val = globalConsts.get( name )

@@ -14,16 +14,24 @@ LICENSE: License terms. GPL 3.0.
 
 PythonCode: The code to run HillTau.
 
+CppCode: The code to run HillTau using python bindings via Pybind11 to C++.
+
 [Documentation for HillTau](Documentation.md)
 
 [Preprint for HillTau](https://www.biorxiv.org/content/10.1101/2020.09.20.305250v1), which discusses many aspects of its design and use.
 
 ## Installation
 Copy the two files hillTau.py and hillTauSchema.json from PythonCode to your
-target directory.
+target directory. 
+
+OR
+
+pip install hillTau
 
 ## Versions
-HillTau has been tested with Python 2.7.17 and Python 3.6.9
+The Python version of HillTau has been tested with Python 2.7.17 and Python 3.6.9<br>
+The C++ version of HillTau uses Python 3.6 or higher. It is the recommended
+version.
 
 ## Examples
 Examples: Directory with examples
