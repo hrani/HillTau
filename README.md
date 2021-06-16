@@ -24,7 +24,7 @@ CppCode: The code to run HillTau using python bindings via Pybind11 to C++.
 Copy the two files hillTau.py and hillTauSchema.json from PythonCode to your
 target directory. 
 
-OR
+COMING SOON:
 
 pip install hillTau
 
