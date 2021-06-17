@@ -16,6 +16,15 @@ PythonCode: The code to run HillTau.
 
 CppCode: The code to run HillTau using python bindings via Pybind11 to C++.
 
+MASH: Model Abstraction from SBML to HillTau. Utility program for model 
+reduction, see 
+
+[Documentation for MASH](Mashdoc.md)
+
+ht2sbml: Utility program to convert HillTau (JSON format) model to a near-
+	approximation in SBML, suitable for running on several ODE simulators
+	like COPASI.
+
 [Documentation for HillTau](Documentation.md)
 
 [Preprint for HillTau](https://www.biorxiv.org/content/10.1101/2020.09.20.305250v1), which discusses many aspects of its design and use.
@@ -26,7 +35,9 @@ target directory.
 
 COMING SOON:
 
-pip install hillTau
+pip install hillTau<br>
+This will help install the _much_ faster C++ version of HillTau, with the same
+friendly Python interface.
 
 ## Versions
 The Python version of HillTau has been tested with Python 2.7.17 and Python 3.6.9<br>
