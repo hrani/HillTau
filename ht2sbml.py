@@ -50,47 +50,69 @@ def conv2sbml( htfile, sbmlfile ):
     # simple hack: replace all references to listOfReactants to
     # listOfModifiers in the generated SBML.
 
+    #smodel = simplesbml.SbmlModel( sub_units = 'millimole', extent_units = 'mole' )
+    # SimpleSBML doesn't let me set units to anything but mole..
+    # So I'll just rescale the concs.
     smodel = simplesbml.SbmlModel()
     smodel.addCompartment( 1e-15, comp_id = 'comp' )
     for name, mol in htmodel.molInfo.items():
-        smodel.addSpecies( "["+name+"]", mol.concInit, comp = 'comp' )
+        smodel.addSpecies( "["+name+"]", mol.concInit *1e-3, comp = 'comp' )
     for name, reac in htmodel.reacInfo.items():
         s = reac.subs
         expr = "1.0"
-        local_params = {'KA': reac.KA, 'tau': (reac.tau+reac.tau2)/2.0, 'n': reac.HillCoeff, 'gain': reac.gain}
+        local_params = {'KA': reac.KA * 1e-3, 'tau': (reac.tau+reac.tau2)/2.0, 'n': reac.HillCoeff, 'gain': reac.gain, 'Vcomp': 1e-15}
         if len( s ) == 1:   # a --> p
             reactants = s
-            expr = "(({0}*gain/KA)-{1})/tau".format(s[0], name )
+            expr = "Vcomp * (({0}*gain/KA)-{1})/tau".format(s[0], name )
         elif s[0] == s[-1]: # n*a --> p
             reactants = [str(len( s )) + " " + s[0]]
-            expr = "(({0}^n * gain/KA)-{1})/tau".format(s[0], name )
+            expr = "Vcomp * (({0}^n * gain/KA)-{1})/tau".format(s[0], name )
         elif len( s ) == 2: # a + b --> p
             reactants = [s[0], s[1]]
             if reac.inhibit:
-                expr = "((gain * {0} * (1-{1}/(KA + {1})))-{2})/tau".format(s[0], s[1], name )
+                expr = "Vcompt * ((gain * {0} * (1-{1}/(KA + {1})))-{2})/tau".format(s[0], s[1], name )
             else:
-                expr = "((gain * {0} * {1}/(KA + {1}))-{2})/tau".format(s[0], s[1], name )
+                expr = "Vcomp * ((gain * {0} * {1}/(KA + {1}))-{2})/tau".format(s[0], s[1], name )
         elif s[1] == s[-1]: # a + nb --> p
             reactants = [s[0], str(len( s )-1) + " " + s[1]]
             if reac.inhibit:
-                expr = "((gain * {0} * (1-{1}^n/(KA^n + {1}^n)))-{2})/tau".format(s[0], s[1], name )
+                expr = "Vcomp * ((gain * {0} * (1-{1}^n/(KA^n + {1}^n)))-{2})/tau".format(s[0], s[1], name )
             else:
-                expr = "((gain * {0} * {1}^n/(KA^n + {1}^n))-{2})/tau".format(s[0], s[1], name )
+                expr = "Vcomp * ((gain * {0} * {1}^n/(KA^n + {1}^n))-{2})/tau".format(s[0], s[1], name )
         else:               # a + mod + nb --> p
             reactants = [s[0], s[1], str(len( s )-2) + " " + s[2]]
             local_params['Kmod'] = reac.Kmod
             local_params['Amod'] = reac.Amod
             local_params['Nmod'] = reac.Nmod
             if reac.inhibit:
-                expr = "((gain * {0} * (1-{2}^n/((KA^n*(1+({1}/Kmod)^Nmod)/(1+Amod*(({1}/Kmod)^Nmod))) + {2}^n)))-{3})/tau".format(s[0], s[1], s[-1], name )
+                expr = "Vcomp * ((gain * {0} * (1-{2}^n/((KA^n*(1+({1}/Kmod)^Nmod)/(1+Amod*(({1}/Kmod)^Nmod))) + {2}^n)))-{3})/tau".format(s[0], s[1], s[-1], name )
             else:
-                expr = "((gain * {0} * {2}^n/((KA^n*(1+({1}/Kmod)^Nmod)/(1+Amod*(({1}/Kmod)^Nmod))) + {2}^n))-{3})/tau".format(s[0], s[1], s[-1], name )
+                expr = "Vcomp * ((gain * {0} * {2}^n/((KA^n*(1+({1}/Kmod)^Nmod)/(1+Amod*(({1}/Kmod)^Nmod))) + {2}^n))-{3})/tau".format(s[0], s[1], s[-1], name )
 
         smodel.addReaction( reactants, [name], expr, local_params = local_params, rxn_id="r__"+name )
 
     with open( sbmlfile, 'w' ) as fd:
+        # Here we get into a series of hacks to convert the rectants
+        # into modifiers.
         # Hack to put in modifiers instead of reactants:
-        fd.write( smodel.toSBML().replace( "listOfReactants", "listOfModifiers" ))
+        sbmlstr = smodel.toSBML().replace( "listOfReactants", "listOfModifiers" )
+        # Remove stoichometry and constant terms from modifier species refs 
+        sbmlstr = sbmlstr.replace( "speciesReference", "modifierSpeciesReference" )
+
+        sbmlstr = sbmlstr.replace( " stoichiometry=\"1\" constant=\"true\"", "" )
+        sbmlstr = sbmlstr.replace( " stoichiometry=\"2\" constant=\"true\"", "" )
+        sbmlstr = sbmlstr.replace( " stoichiometry=\"3\" constant=\"true\"", "" )
+        sbmlstr = sbmlstr.replace( " stoichiometry=\"4\" constant=\"true\"", "" )
+        sbmllist = sbmlstr.split( "listOfProducts>" )
+
+        newstr = ""
+        for s in sbmllist:
+            if s[-1] == '/':    # closing line for listOfProducts
+                s=s.replace( '/>', ' stoichiometry="1" constant="true"/>' )
+                s=s.replace( 'modifierSpeciesReference', 'speciesReference' )
+            newstr += s + "listOfProducts>"
+
+        fd.write( newstr[:-len("listOfProducts>" )] )
 
     '''
     for i in stimVec:
