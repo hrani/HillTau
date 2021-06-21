@@ -25,13 +25,18 @@ ht2sbml: Utility program to convert HillTau (JSON format) model to a near-
 	approximation in SBML, suitable for running on several ODE simulators
 	like COPASI.
 
+htgraph: Utility program to generate png or svg graphs to display reaction 
+structure of HillTau model.
+
 [Documentation for HillTau](Documentation.md)
 
 [Preprint for HillTau](https://www.biorxiv.org/content/10.1101/2020.09.20.305250v1), which discusses many aspects of its design and use.
 
 ## Installation
 Copy the two files hillTau.py and hillTauSchema.json from PythonCode to your
-target directory. 
+target directory.<br>
+If you want to run the utilities, also copy *mash.py*, *ht2sbml.py* and 
+*htgraph.py* to the target directory.
 
 COMING SOON:
 
