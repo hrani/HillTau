@@ -306,12 +306,12 @@ def parseStims( stimArg, builtin, cyclic, doser ):
     stimVec = []
     t = 0.0
     for b in builtin:
-        assert( len(b) == 3 ) # molecule, midconc, midtime
-        mol, midconc, midtime = b
+        assert( len(b) == 3 ) # molecule, midconc, midTime
+        mol, midconc, midTime = b
         midconc = float( midconc )
-        midtime = float( midtime )
-        #print("'{}'     '{}'        '{}'".format( mol, midconc, midtime) )
-        settleTime = midtime * settleTimeScale
+        midTime = float( midTime )
+        #print("'{}'     '{}'        '{}'".format( mol, midconc, midTime) )
+        settleTime = midTime * settleTimeScale
         # Build dose=response
         t = parseDoser( stimVec, [mol, midconc, settleTime], t)
         # Build cyclic stimulus
@@ -408,7 +408,7 @@ def main():
     parser.add_argument( '-c', '--cyclic', nargs = 5, metavar = ('molecule', 'conc', 'onTime', 'offTime', 'num_cycles'), action='append', help='Optional: Deliver cyclic stimulus. This is a timeseries of rectangular pulses from 0 to conc, with an onTime and offTime as specified, repeated for num_cycles. Before the first cycle, and after the last cycle it runs for another "offTime" seconds at conc = 0. If molecule names are different between chem and HillTau models, they should be separated by a slash.', default = [] )
     parser.add_argument( '-d', '--dose_response', nargs = 3, metavar = ('molecule', 'midconc', 'settle_time'), action='append', help='Optional: Deliver dose-response stimulus centered around midconc, with a settling time of settle_time. If other builtin, cyclic or dose_response stimuli are specified, they will be executed in order, without overlap. If molecule names are different between chem and HillTau models, they should be separated by a slash.', default = [] )
     parser.add_argument( "-a", "--addParams", type = str, nargs = "+", metavar = "obj.field", help = "Optional: Add parameter list. This will remove all the automatic ones obtained by scanning through the model, and only use the added ones from this list. Each parameter is of the form object.field. Any number of parameters can be added, separated by spaces. If molecule names are different between chem and HillTau models, they should be separated by a slash", default = [] ) 
-    parser.add_argument( "-r", "--removeParams", type = str, nargs = "+", metavar = "param", help= "Optional: Remove parameters from the default ones which were generated automatically by scanning all the reactions in the model. Each parameter is of the form object.field. Any number of parameters can be added, separated by spaces.", default = [] )
+    parser.add_argument( "-r", "--removeParams", type = str, nargs = "+", metavar = "param", help= "Optional: Remove parameters from the default ones which were generated automatically by scanning all the reactions in the model. Each parameter is of the form object.field. Any number of parameters can be specified, separated by spaces.", default = [] )
     parser.add_argument( '-s', '--stimulus', type = str, nargs = '+', metavar = 'args', action='append', help='Optional: Deliver stimulus as follows: --stimulus molecule conc time [conc time]... Each stimulus molecule may be followed by one or more [conc time] pairs. Any number of stimuli may be given, each indicated by --stimulus. Stimuli can overlap with the builtin stimuli, the values will apply from the time they are given till the builtin protocol delivers its own stimulus to override them.', default = [] )
     parser.add_argument( '-p', '--plot', action='store_true', help='Flag: when set, it plots the chem output, the original HillTau output, and the optimized HillTau output')
     parser.add_argument( "-t", "--tolerance", type = float, help = "Optional: tolerance for convergence of optimization.", default = 1.0e-6 )

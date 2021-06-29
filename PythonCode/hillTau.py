@@ -232,6 +232,7 @@ class Model():
         self.molInfo = {}
         self.reacInfo = {}
         self.eqnInfo = {}
+        self.grpInfo = []
         self.sortedReacInfo = []
         self.currentTime = 0.0
         self.step = 0
@@ -427,6 +428,7 @@ def parseModel( jsonDict ):
     # Species; names of reacs, First term of Eqns, substrates.
     # This assumes that every quantity term has already been scaled to mM.
     for grpname, grp in model.jsonDict['Groups'].items():
+        model.grpInfo.append( grpname )
         # We may have repeats in the species names as they are used 
         # in multiple places.
         if "Reacs" in grp:
@@ -530,6 +532,24 @@ def sortReacs( model ):
         order = model.molInfo[name].order
         model.sortedReacInfo[order].append( reac )
 
+def writeOutput( fname, model, plotvec, x ):
+    with open( fname, "w" ) as fd:
+        olist = sorted([ i for i in model.molInfo])
+        header = "Time\t"
+        outvec = [[str(v) for v in x]]
+        rx = range( len( x ) )
+        for name in olist:
+            header += name + "\t"
+            idx = model.molInfo[name].index
+            outvec.append( [str(v) for v in plotvec[idx] ] )
+        ry = range( len( outvec ) )
+        fd.write( header + "\n" )
+        for i in rx:
+            for j in ry:
+                fd.write( outvec[j][i] + "\t" )
+            fd.write( "\n" )
+
+
 def main():
     parser = argparse.ArgumentParser( description = 'This is the hillTau simulator.\n'
     'This program simulates abstract kinetic/neural models defined in the\n'
@@ -542,6 +562,7 @@ def main():
     parser.add_argument( '-dt', '--dt', type = float, help='Optional: Time step for model calculations, in seconds. If this argument is not set the code calculates dt to be a round number about 1/100 of runtime.', default = -1.0 )
     parser.add_argument( '-s', '--stimulus', type = str, nargs = '+', action='append', help='Optional: Deliver stimulus as follows: --stimulus molecule conc [start [stop]]. Any number of stimuli may be given, each indicated by --stimulus. By default: start = 0, stop = runtime', default = [] )
     parser.add_argument( '-p', '--plots', type = str, help='Optional: plot just the specified molecule(s). The names are specified by a comma-separated list.', default = "" )
+    parser.add_argument( '-o', '--output', type = str, metavar = "fname", help='Optional: Generate an output tab-separated text file with columns of time conc1 conc2 and so on.' )
     args = parser.parse_args()
     jsonDict = loadHillTau( args.model )
     qs = getQuantityScale( jsonDict )
@@ -594,6 +615,9 @@ def main():
         clPlots = [ i.strip() for i in clPlots if i in model.molInfo]
     else: 
         clPlots = [ i for i in model.molInfo ]
+
+    if args.output:
+        writeOutput( args.output, model, plotvec, x )
 
     qu = jsonDict.get( "QuantityUnits" )
     if not qu:

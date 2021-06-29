@@ -39,7 +39,8 @@ import hillTau
 import simplesbml
 
 
-def conv2sbml( htfile, sbmlfile ):
+def conv2sbml( htfile, sbmlfile, stimMol = "", events = [] ):
+    # Events are a list of [time, conc] assignments.
     jsonDict = hillTau.loadHillTau( htfile )
     hillTau.scaleDict( jsonDict, hillTau.getQuantityScale( jsonDict ) )
     htmodel = hillTau.parseModel( jsonDict )
@@ -70,7 +71,7 @@ def conv2sbml( htfile, sbmlfile ):
         elif len( s ) == 2: # a + b --> p
             reactants = [s[0], s[1]]
             if reac.inhibit:
-                expr = "Vcompt * ((gain * {0} * (1-{1}/(KA + {1})))-{2})/tau".format(s[0], s[1], name )
+                expr = "Vcomp * ((gain * {0} * (1-{1}/(KA + {1})))-{2})/tau".format(s[0], s[1], name )
             else:
                 expr = "Vcomp * ((gain * {0} * {1}/(KA + {1}))-{2})/tau".format(s[0], s[1], name )
         elif s[1] == s[-1]: # a + nb --> p
@@ -90,6 +91,8 @@ def conv2sbml( htfile, sbmlfile ):
                 expr = "Vcomp * ((gain * {0} * {2}^n/((KA^n*(1+({1}/Kmod)^Nmod)/(1+Amod*(({1}/Kmod)^Nmod))) + {2}^n))-{3})/tau".format(s[0], s[1], s[-1], name )
 
         smodel.addReaction( reactants, [name], expr, local_params = local_params, rxn_id="r__"+name )
+    for e in events:
+        smodel.addEvent( trigger='time>' + str(e[0]), assignments = {stimMol:str(e[1]) }) 
 
     with open( sbmlfile, 'w' ) as fd:
         # Here we get into a series of hacks to convert the rectants
