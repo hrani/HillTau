@@ -58,10 +58,24 @@ May 31: line flags for eliminating the legend and for changing colors to bw.
 June 1: added features for adjusting fontsize and height on command line
 
 June 3: Group colors and node colors added
+
+June 15: more option which are Optional 
+	-ranksep'   : set rank separation (vertical spacing) in output.
+	-group'     : Display group pass multiple group name with comma seperator
+	-fontsize'  : set font size for node labels.
+	-no_legend' : Turns off generation of legend'
+	-bw'		: Goes into black-and-white plotting mode
+
+Jun 19: Order of molecules
+	#mol Kmod inhibit First-element second-element third-element
+	 2	  0	     0 	     Input       Activator         --
+	 2    0      1       Input       Inhibitor         --
+	 3    1      0       Input       Modifier 		Activator
+	 3    1      1       Input       Modifier       Inhibitor
 '''
 
 import sys,os
-sys.path.insert(1, '../../PythonCode/')
+sys.path.insert(1, 'PythonCode/')
 from subprocess import call
 import pydot
 import re
@@ -296,7 +310,7 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,fontsize = 1
 				node_color[newsub] = reaction_color
 
 			checkdigit(startstringdigit,sub)
-			if reac.inhibit == 1.0 and sublist.index(sub) == 1:
+			if (reac.inhibit == 1.0 and sublistU.index(sub) == len(sublistU)-1 ) :
 				c = countX(sublist,sub)
 				sub = checkdigitEqu(startstringdigit,sub)
 				inhibit_exist = True
@@ -306,7 +320,7 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,fontsize = 1
 				else:
 					edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
 			elif len(sublistU) == 3 and sublist.index(sub) == 1:
-				''' kmod odiamond '''
+				''' modifier odiamond '''
 				sub = checkdigitEqu(startstringdigit,sub)
 				edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = odiamond weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
 				kmod_exist = True
@@ -315,13 +329,14 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,fontsize = 1
 					c = countX(sublist,sub)
 					lig_exist = True
 					sub = checkdigitEqu(startstringdigit,sub)
-					''' ligand vee '''
+					''' ligand  or activate vee '''
 					if c >1:
 						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
 					else:
 						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"				
 				else:
 					if  sublist.index(sub) == 0:
+						''' input '''
 						sub = checkdigitEqu(startstringdigit,sub)
 						edgelist = edgelist +"\n"+sub+"->"+prd+"[arrowhead=normal weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+":"+reaction_color+"\" style=bold]"				
 	return(edgelist,node_color,lig_exist,kmod_exist,inhibit_exist)
