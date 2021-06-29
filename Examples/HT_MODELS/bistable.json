@@ -4,12 +4,12 @@
 	"Comment": "Conc units are milliMolar, time units are seconds",
 	"Groups": {
 		"output_g": {
-			"Species": {"output": 0.0, "mol": 1.0, "fb": 0.01, "input": 1.0 },
+			"Species": {"output": 0.0, "mol": 0.5, "stim": 1.0},
 			"Reacs": {
-				"output": {"subs": ["mol","fb", "fb"],
-					"KA": 0.2, "tau":1, "baseline": 0.03 },
-				"fb": {"subs": ["input", "output", "output"],
-					"KA": 0.4, "tau":1 }
+				"output": {"subs": ["mol","stim","fb", "fb"],
+					"KA": 0.6, "tau":0.2, "baseline": 0.02, "Kmod": 1.0, "Amod": 1000, "Nmod": 4 },
+				"fb": {"subs": ["output", "output"],
+					"KA": 0.3, "tau":0.2 }
 			}
 		}
 	}

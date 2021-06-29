@@ -1,36 +1,62 @@
 {
-    "Comment": "Conc units are arb, time units are seconds", 
-    "quantityUnits": "uM", 
-    "Description": "Synaptic plasticity", 
+    "Comment": "Conc units are arb, time units are seconds",
+    "quantityUnits": "uM",
+    "Description": "Synaptic plasticity",
     "Groups": {
         "CaN_g": {
-            "Species": { "Ca": 0.08, "CaN": 2.118 }, 
+            "Species": {
+                "Ca": 0.08000076526340248,
+                "CaN": 3.4445603899549226
+            },
             "Reacs": {
                 "aCaN": {
-                    "tau2": 11.79, "tau": 0.533, "KA": 0.1201, 
-                    "baseline": 0.2164, 
-                    "subs": [ "CaN", "Ca", "Ca", "Ca" ]
+                    "tau2": 12.890755384314055,
+                    "tau": 0.13160918635792695,
+                    "KA": 0.24224621614339373,
+                    "baseline": 0.15075326934222233,
+                    "subs": [
+                        "CaN",
+                        "Ca",
+                        "Ca",
+                        "Ca"
+                    ]
                 }
             }
-        }, 
+        },
         "CaMKII_g": {
-            "Species": { "CaMKII": 1.146 }, 
+            "Species": {
+                "CaMKII": 2.021050261266184
+            },
             "Reacs": {
-                "on_CaMKII": {
-                    "tau2": 42.75, "tau": 1.06, "KA": 1.72, "baseline": 0.3748, 
-                    "subs": [ "CaMKII", "Ca", "Ca", "Ca", "Ca" ]
+                "aCaMKII": {
+                    "tau2": 19.147150089300617,
+                    "tau": 1.2439864888164813,
+                    "KA": 0.8975958972549232,
+                    "baseline": 0.474542397478716,
+                    "subs": [
+                        "CaMKII",
+                        "Ca",
+                        "Ca",
+                        "Ca",
+                        "Ca"
+                    ]
                 }
             }
-        }, 
+        },
         "ampar_g": {
             "Reacs": {
                 "synAMPAR": {
-                    "tau": 0.2, "KA": 0.8918, 
-                    "subs": [ "on_CaMKII", "aCaN" ], 
-                    "inhibit": 1, "baseline": 0.08255
+                    "tau": 0.0723142266471899,
+                    "tau2": 1.7011070346846917,
+                    "KA": 0.8558453806094058,
+                    "inhibit": 1,
+                    "subs": [
+                        "aCaMKII",
+                        "aCaN"
+                    ]
                 }
             }
         }
-    }, 
+    },
     "Author": "Upi Bhalla"
 }
