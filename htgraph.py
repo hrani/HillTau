@@ -72,13 +72,18 @@ Jun 19: Order of molecules
 	 2    0      1       Input       Inhibitor         --
 	 3    1      0       Input       Modifier 		Activator
 	 3    1      1       Input       Modifier       Inhibitor
+
+Jun 30: with option -sg or --specific group, one can display specific group from the big model
+python htgraph.py model.json -sg "group1_g","group2_g"
+- If group name doesn't exist then it just ignores that specific group and display rest 
+- If no group, specified in the command line exist then entire model is display like wise if no group is specified then
+also entire model is displayed. 
+
 '''
 
 import sys,os
 sys.path.insert(1, 'PythonCode/')
 from subprocess import call
-import pydot
-import re
 import matplotlib
 from collections import OrderedDict
 
@@ -103,13 +108,20 @@ def unique(list1):
 	return output
 	#return list(set(list1))
 
-def checkdigit(startstringdigit,sp):
+def checkdigit(startstringdigit,grp,sp):
 	if sp.startswith(tuple('0123456789')):
-		startstringdigit[sp] = "s"+sp
-		
-def checkdigitEqu(statstringdigit,sp):
-	if sp in startstringdigit:
-		sp = startstringdigit[sp]
+		if grp in startstringdigit:
+			#pass#startstringdigit[grp].append((sp:"s"+sp))
+			startstringdigit[grp][sp] = "s"+sp
+		else:
+			startstringdigit[grp] ={sp:"s"+sp}
+
+def checkdigitEqu(startstringdigit,grp,sp):
+	if grp in startstringdigit:
+		grpitems = startstringdigit[grp]
+		for k,v in grpitems.items():
+			if k == sp:
+				sp = v
 	return(sp)
 
 def getColor(gIndex,fwd_rev="forward"):
@@ -134,12 +146,12 @@ def getColor(gIndex,fwd_rev="forward"):
 	else:
 		return getColor(0)
 
-def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 18, showGroups = True ):
+def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 18, showGroups = True,specific_group = []):
 	group_no = 0;
 	#groupmap = dict()
 	groupmap = OrderedDict()
 	global startstringdigit
-	startstringdigit= {}
+	startstringdigit= OrderedDict()
 	global node_color
 	node_color = {}
 	lig_exist = False
@@ -147,7 +159,6 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	inhibit_exist = False
 	edge_arrowsize = 1.5
 	edge_weight = 1
-
 	s = ""
 	st = os.path.splitext(outputfile)
 	outputfilename = st[0]
@@ -164,59 +175,77 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	#f_graph.write("size = \"4,4!\"\n")
 	#f_graph.write("node [shape=box, penwidth=2, height=0.01, width=0.01 ];")
 	f_graph.write("node [shape=box, penwidth=2,fontsize={}];".format( fontsize ) )
+	displayGroups = []
+	if specific_group == None:
+		displayGroups = modelpath.grpInfo
+	else:
+		if any(i in specific_group for i in modelpath.grpInfo):
+			displayGroups = specific_group
+		else:
+			displayGroups = modelpath.grpInfo
+		
 	
-	specielist,node_color = writeSpecies(modelpath,groupmap,f_graph)
-	funclist = writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, fontsize = fontsize - 2)
-	edgelist,node_color,lig_exist,kmod_exist,inhibit_exist = writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, fontsize = fontsize - 2)
+	specielist,node_color = writeSpecies(modelpath,groupmap)
+	funclist = writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, displayGroups, fontsize = fontsize - 2)
+	edgelist,node_color,lig_exist,kmod_exist,inhibit_exist = writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups,fontsize = fontsize - 2)
 	nIndex = len(matplotcolors)-1
+	
 	if showGroups:
 		for grp,items in groupmap.items():
-			color,nIndex = getColor(nIndex,"reverse")
-			s = s + "\nsubgraph cluster_"+str(group_no)+"i\n{"
-			s = s+"\nsubgraph cluster_"+str(group_no)+"\n{"+"\n"+"label=\""+grp+"\";\npenwidth=4; margin=10.0\ncolor=\""+color+"\";\nfontsize="+str(fontsize + 2)+";\n"
-			sps = ""
-			items = list(unique(items))
-			for sp in items:
-				if items.index(sp) != 0:
-					sps = sps+','+sp
-				else:
-					sps = sps+sp
-			s = s+sps+"\n} style=invisible\n}"
-			group_no += 1;
+			if grp in displayGroups:
+				color,nIndex = getColor(nIndex,"reverse")
+				s = s + "\nsubgraph cluster_"+str(group_no)+"i\n{"
+				s = s+"\nsubgraph cluster_"+str(group_no)+"\n{"+"\n"+"label=\""+grp+"\";\npenwidth=4; margin=10.0\ncolor=\""+color+"\";\nfontsize="+str(fontsize + 2)+";\n"
+				sps = ""
+				items = list(unique(items))
+				for sp in items:
+					if items.index(sp) != 0:
+						sps = sps+','+sp
+					else:
+						sps = sps+sp
+				s = s+sps+"\n} style=invisible\n}"
+				group_no += 1;
 	
 	f_graph.write(s)
 	f_graph.write(edgelist)
 	f_graph.write(funclist)
 	nodeIndex = 0
-	for k,v in node_color.items():
-		v,nodeIndex = getColor(nodeIndex)
-		f_graph.write("\n"+k+"[color=\""+v+"\"]")
+	for k,vl in groupmap.items():
+		if k in displayGroups:
+			for l in vl:
+				if l in node_color:
+					v = node_color[l]
+					v,nodeIndex = getColor(nodeIndex)
+					f_graph.write("\n"+l+"[color=\""+v+"\"]")
+		
 	for p,q in startstringdigit.items():
-		f_graph.write("\n"+q+"[label=\""+p+"\"]")	
+		if p in displayGroups:
+			for m,n in q.items():
+				f_graph.write("\n"+n+"[label=\""+m+"\"]")	
 	
 	if hasLegend:
-	    f_graph.write("\nnode [shape=plaintext]\nsubgraph cluster_01 {\n\tlabel = \"Legend\";\n\t{ rank=sink;\n\tkey [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n\t<tr><td align=\"right\" port=\"i1\">Input</td></tr>\n")
-	    if lig_exist:
-		    f_graph.write("\t<tr><td align=\"right\" port=\"i2\">Activate</td></tr>\n")
-	    if kmod_exist:
-		    f_graph.write("\t<tr><td align=\"right\" port=\"i3\">Modifier</td></tr>\n")
-	    if inhibit_exist:
-		    f_graph.write("\t<tr><td align=\"right\" port=\"i4\">Inhibit</td></tr>\n")
-	    f_graph.write("\t</table>>]\n\tkey2 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n\t<tr><td port=\"i1\">&nbsp;</td></tr>\n")
-	    if lig_exist:
-		    f_graph.write("\t<tr><td port=\"i2\">&nbsp;</td></tr>\n")
-	    if kmod_exist:
-		    f_graph.write("\t<tr><td port=\"i3\">&nbsp;</td></tr>\n")
-	    if inhibit_exist:
-		    f_graph.write("\t<tr><td port=\"i4\">&nbsp;</td></tr>\n")
-	    f_graph.write("\t</table>>]\n\tkey:i1:e -> key2:i1:w [arrowhead=normal color=\"black:black\" style=bold]\n")
-	    if lig_exist:
-		    f_graph.write("\tkey:i2:e -> key2:i2:w [arrowhead=vee]\n")
-	    if kmod_exist:
-		    f_graph.write("\tkey:i3:e -> key2:i3:w [arrowhead=odiamond]\n")
-	    if inhibit_exist:
-		    f_graph.write("\tkey:i4:e -> key2:i4:w [arrowhead=tee]\n")
-	    f_graph.write("\t}\n\t}")
+		f_graph.write("\nnode [shape=plaintext]\nsubgraph cluster_01 {\n\tlabel = \"Legend\";\n\t{ rank=sink;\n\tkey [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n\t<tr><td align=\"right\" port=\"i1\">Input</td></tr>\n")
+		if lig_exist:
+			f_graph.write("\t<tr><td align=\"right\" port=\"i2\">Activate</td></tr>\n")
+		if kmod_exist:
+			f_graph.write("\t<tr><td align=\"right\" port=\"i3\">Modifier</td></tr>\n")
+		if inhibit_exist:
+			f_graph.write("\t<tr><td align=\"right\" port=\"i4\">Inhibit</td></tr>\n")
+		f_graph.write("\t</table>>]\n\tkey2 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n\t<tr><td port=\"i1\">&nbsp;</td></tr>\n")
+		if lig_exist:
+			f_graph.write("\t<tr><td port=\"i2\">&nbsp;</td></tr>\n")
+		if kmod_exist:
+			f_graph.write("\t<tr><td port=\"i3\">&nbsp;</td></tr>\n")
+		if inhibit_exist:
+			f_graph.write("\t<tr><td port=\"i4\">&nbsp;</td></tr>\n")
+		f_graph.write("\t</table>>]\n\tkey:i1:e -> key2:i1:w [arrowhead=normal color=\"black:black\" style=bold]\n")
+		if lig_exist:
+			f_graph.write("\tkey:i2:e -> key2:i2:w [arrowhead=vee]\n")
+		if kmod_exist:
+			f_graph.write("\tkey:i3:e -> key2:i3:w [arrowhead=odiamond]\n")
+		if inhibit_exist:
+			f_graph.write("\tkey:i4:e -> key2:i4:w [arrowhead=tee]\n")
+		f_graph.write("\t}\n\t}")
 
 	f_graph.write("\n}")
 	f_graph.close()
@@ -224,13 +253,13 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	command = "dot -T"+ outputfiletype + " "+ outputfilename+".dot -o "+outputfile
 	call([command], shell=True)
 
-def writeSpecies(modelpath, groupmap,f_graph):
+def writeSpecies(modelpath, groupmap):
 	# getting all the species
 	specieslist = ""
 	mIndex = 0 
 	for molname, mol in ( modelpath.molInfo.items() ):
-		checkdigit(startstringdigit,molname)
-		molname = checkdigitEqu(startstringdigit,molname)
+		checkdigit(startstringdigit,mol.grp,molname)
+		molname = checkdigitEqu(startstringdigit,mol.grp,molname)
 		if molname not in node_color:
 			spe_color,mIndex = getColor(mIndex)
 			node_color[molname] = spe_color
@@ -241,14 +270,13 @@ def writeSpecies(modelpath, groupmap,f_graph):
 			groupmap[mol.grp] = [molname]
 	return specieslist,node_color
 		
-def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, fontsize = 16):
+def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups, fontsize = 16):
 	equation_pluse = 0
 	equation_sigma = 0
 	edgelist = ""
-	constants_list = []
 	for e,t in modelpath.eqnInfo.items():
-		checkdigit(startstringdigit,t.name)
-		t.name = checkdigitEqu(startstringdigit,t.name)
+		checkdigit(startstringdigit,t.grp,t.name)
+		t.name = checkdigitEqu(startstringdigit,t.grp,t.name)
 		allpluse = True
 		mathSym = []
 		for i in t.eqnStr:
@@ -258,27 +286,32 @@ def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, fontsize = 
 			allpluse = True
 		else:
 			allpluse = False
+		
 		if allpluse:
 			plusesize = "pluse"+str(equation_pluse)
 			equation_pluse+=1
-			edgelist = edgelist+"\n"+plusesize+"[label=\"+\",shape=circle]"
+			if t.grp in displayGroups:
+				edgelist = edgelist+"\n"+plusesize+"[label=\"+\",shape=circle]"
 			groupmap[t.grp].append(plusesize)
 		else:
 			plusesize = "sigma"+str(equation_sigma)
 			equation_sigma+=1
-			edgelist = edgelist+"\n"+plusesize+"[label=<&Sigma;>,shape=circle]"
+			if t.grp in displayGroups:
+				edgelist = edgelist+"\n"+plusesize+"[label=<&Sigma;>,shape=circle]"
 			groupmap[t.grp].append(plusesize)
 		for tsubs in unique(t.subs):
 			input_color = node_color[tsubs]
 			c = countX(t.subs,tsubs)
-			edgelist = edgelist+"\n"+tsubs+"->"+plusesize+"[arrowhead=vee weight = "+str(edge_weight)+" color=\""+input_color+ "\" arrowsize = "+str(edge_arrowsize)+""
-			if c > 1:
-				edgelist = edgelist+ " label=\" "+str(c)+"\" fontsize={}".format( fontsize )
-			edgelist = edgelist+"]"
-		edgelist = edgelist+"\n"+plusesize+"->"+t.name+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+"]"
+			if t.grp in displayGroups:
+				edgelist = edgelist+"\n"+tsubs+"->"+plusesize+"[arrowhead=vee weight = "+str(edge_weight)+" color=\""+input_color+ "\" arrowsize = "+str(edge_arrowsize)+""
+				if c > 1:
+					edgelist = edgelist+ " label=\" "+str(c)+"\" fontsize={}".format( fontsize )
+				edgelist = edgelist+"]"
+		if t.grp in displayGroups:
+			edgelist = edgelist+"\n"+plusesize+"->"+t.name+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+"]"
 	return edgelist
 
-def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,fontsize = 16):
+def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups,fontsize = 16):
 	edgelist = ""
 	reaction_color_list =[]
 	lig_exist = False
@@ -286,60 +319,60 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,fontsize = 1
 	inhibit_exist = False
 	sIndex = 0
 	for reacname, reac in ( modelpath.reacInfo.items() ):
-		checkdigit(startstringdigit,reacname)
-		reacname = checkdigitEqu(startstringdigit,reacname)
-		if reac.grp in groupmap:
-			groupmap[reac.grp].append(reacname)
-		else:
-			groupmap[reac.grp] = [reacname]
-		sublist = reac.subs
-		sublistU = unique(reac.subs)
-		prd = reacname
-		#reaction_color = getRandcolorX(reaction_color_list)
-		#reaction_color,sIndex = getColor(sIndex)
-		#reaction_color = getRandColor()
-		for sub in sublistU:
-			newsub = sub
-			if sub in startstringdigit:
-				newsub = startstringdigit[sub]
-			''' if string starting with number, then replace with s+string'''		
-			if newsub in node_color:
-				reaction_color = node_color[newsub]
+		checkdigit(startstringdigit,reac.grp,reacname)
+		reacname = checkdigitEqu(startstringdigit,reac.grp,reacname)
+		if reac.grp in displayGroups:
+			if reac.grp in groupmap:
+				groupmap[reac.grp].append(reacname)
 			else:
-				reaction_color,sIndex = getColor(sIndex)
-				node_color[newsub] = reaction_color
+				groupmap[reac.grp] = [reacname]
+			sublist = reac.subs
+			sublistU = unique(reac.subs)
+			prd = reacname
+			for sub in sublistU:
+				newsub = sub
+				if sub in startstringdigit:
+					newsub = startstringdigit[sub]
+				''' if string starting with number, then replace with s+string'''
+				if newsub in node_color:
+					reaction_color = node_color[newsub]
+				else:
+					reaction_color,sIndex = getColor(sIndex)
+					node_color[newsub] = reaction_color
 
-			checkdigit(startstringdigit,sub)
-			if (reac.inhibit == 1.0 and sublistU.index(sub) == len(sublistU)-1 ) :
-				c = countX(sublist,sub)
-				sub = checkdigitEqu(startstringdigit,sub)
-				inhibit_exist = True
-				''' inhibit  tee  '''
-				if c >1:
-					edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
-				else:
-					edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
-			elif len(sublistU) == 3 and sublist.index(sub) == 1:
-				''' modifier odiamond '''
-				sub = checkdigitEqu(startstringdigit,sub)
-				edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = odiamond weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
-				kmod_exist = True
-			else:
-				if sublist.index(sub) >= 1:
+				checkdigit(startstringdigit,reac.grp,sub)
+				if (reac.inhibit == 1.0 and sublistU.index(sub) == len(sublistU)-1 ) :
 					c = countX(sublist,sub)
-					lig_exist = True
-					sub = checkdigitEqu(startstringdigit,sub)
-					''' ligand  or activate vee '''
+					sub = checkdigitEqu(startstringdigit,reac.grp,sub)
+					inhibit_exist = True
+					''' inhibit  ligant activator tee  '''
 					if c >1:
-						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
+						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
 					else:
-						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"				
+						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
+				
+				elif len(sublistU) == 3 and sublist.index(sub) == 1:
+					''' kmod Modulator odiamond '''
+					sub = checkdigitEqu(startstringdigit,reac.grp,sub)
+					edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = odiamond weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
+					kmod_exist = True
 				else:
-					if  sublist.index(sub) == 0:
-						''' input '''
-						sub = checkdigitEqu(startstringdigit,sub)
-						edgelist = edgelist +"\n"+sub+"->"+prd+"[arrowhead=normal weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+":"+reaction_color+"\" style=bold]"				
+					if sublist.index(sub) >= 1:
+						c = countX(sublist,sub)
+						lig_exist = True
+						sub = checkdigitEqu(startstringdigit,reac.grp,sub)
+						''' ligand vee '''
+						if c >1:
+							edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
+						else:
+							edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"				
+					else:
+						if  sublist.index(sub) == 0:
+							''' input '''
+							sub = checkdigitEqu(startstringdigit,reac.grp,sub)
+							edgelist = edgelist +"\n"+sub+"->"+prd+"[arrowhead=normal weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+":"+reaction_color+"\" style=bold]"				
 	return(edgelist,node_color,lig_exist,kmod_exist,inhibit_exist)
+		
 
 def file_choices(choices,fname,iotype):
 	ext = (os.path.splitext(fname)[1][1:]).lower()
@@ -363,6 +396,7 @@ if __name__ == "__main__":
 	parser.add_argument( '-nl', '--no_legend', action='store_true', help='Optional: Turns off generation of legend')
 	parser.add_argument( '-ng', '--no_groups', action='store_true', help='Optional: Removes grouping. All molecules and reactions sit together.')
 	parser.add_argument( '-bw', '--bw', action='store_true', help='Optional: Goes into black-and-white plotting mode')
+	parser.add_argument('-sg', '--specific_group', help='Optional: Specfiy group names for display,delimited groupname seprated by comma.',type=lambda s:s.split(","))
 	args = parser.parse_args()
 	use_bw = args.bw
 
@@ -378,4 +412,4 @@ if __name__ == "__main__":
 
 	jsonDict = loadHillTau( args.model )
 	modelpath = parseModel( jsonDict )
-	jsontoPng(modelpath, outputfile, ranksep = args.ranksep, hasLegend = not args.no_legend, fontsize = args.fontsize, showGroups = not args.no_groups )
+	jsontoPng(modelpath, outputfile, ranksep = args.ranksep, hasLegend = not args.no_legend, fontsize = args.fontsize, showGroups = not args.no_groups,specific_group = args.specific_group )
