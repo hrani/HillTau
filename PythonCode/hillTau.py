@@ -40,6 +40,12 @@ mathFns = ["exp", "log", "ln", "log10", "abs", "sin", "cos", "tan", "sinh", "cos
 def loadHillTau( fname ):
     with open( fname ) as json_file:
         model = json.load( json_file )
+        ft = model.get( "FileType" )
+        if not ft:
+            print( 'Warning: Is "{}" a HillTau file? It lacks "FileType": "HillTau" specification.'.format(fname) )
+        else:
+            if ft != "HillTau":
+                raise( ValueError( "Error: FileType should be 'HillTau', was {}.".format( ft ) ) )
     return model
 
 def subsetModel( model, subsetInfo ):
