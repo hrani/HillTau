@@ -72,6 +72,7 @@ PYBIND11_MODULE(ht, m) {
 		.def( "makeMol", &Model::makeMol, "Create MolInfo object.", py::arg("name"), py::arg("grp"), py::arg("concInit") = -1.0 )
 		.def( "makeReac", &Model::makeReac, "Create ReacInfo object.", py::arg("name"), py::arg("grp"), py::arg("subs"), py::arg("reacParms"))
 		.def( "makeEqn", &Model::makeEqn, "Create EqnInfo object.", py::arg("name"), py::arg("grp"), py::arg("expr"), py::arg( "eqnSubs" ) )
+		.def( "addGrp", &Model::addGrp, "Append grpname string to grpInfo vector.", py::arg("grpname") )
 		.def( "setReacSeqDepth", &Model::setReacSeqDepth, "Defines how deep is the sequence of reactions, that is, the size of sortedReacInfo.")
 		.def( "assignReacSeq", &Model::assignReacSeq, "Builds up sortedReacOrder vectors.")
 		.def( "advance", &Model::advance, "Advances the simulation", py::arg( "runtime" ), py::arg( "settle" ) = 0 )

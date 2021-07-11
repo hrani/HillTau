@@ -93,6 +93,7 @@ class Model
 			void makeMol( const string & name, const string & grp, double concInit );
 			void makeReac( const string & name, const string & grp, const vector< string >& subs, const map< string, double >& reacObj );
 			void makeEqn( const string & name, const string & grp, const string& expr, const vector< string >& eqnSubs );
+			void addGrp( const string& grpname );
 			void setReacSeqDepth( int order );
 			void assignReacSeq( const string& name, int seq );
 			void advance( double runtime, int settle );

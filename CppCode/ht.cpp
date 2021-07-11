@@ -391,6 +391,11 @@ void Model::makeEqn( const string & name, const string & grp, const string& expr
 	molInfo[name]->grp = grp;
 }
 
+void Model::addGrp( const string& grpname )
+{
+	grpInfo.push_back( grpname );
+}
+
 vector< double > Model::getConcVec( int index ) const
 {
 	vector< double > ret( plotvec.size() );

@@ -82,7 +82,7 @@ also entire model is displayed.
 '''
 
 import sys,os
-sys.path.insert(1, 'PythonCode/')
+#sys.path.insert(1, 'PythonCode/')
 from subprocess import call
 import matplotlib
 from collections import OrderedDict

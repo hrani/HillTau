@@ -189,7 +189,7 @@ def parseModel( jsonDict ):
     # Species; names of reacs, First term of Eqns, substrates.
     # This assumes that every quantity term has already been scaled to mM.
     for grpname, grp in jsonDict['Groups'].items():
-        model.grpInfo.append( grpname )
+        model.addGrp( grpname )
         # We may have repeats in the species names as they are used 
         # in multiple places.
         if "Reacs" in grp:
