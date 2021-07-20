@@ -177,6 +177,21 @@ double ReacInfo::concInf( const vector< double >& conc ) const
 	}
 }
 
+int ReacInfo::getReacOrder( const Model& model )
+{
+	int ret = 0;
+	for (auto s = subs.begin(); s != subs.end(); s++ ) {
+		int mo = model.molInfo.at( *s )->order;
+		if (mo < 0)
+			return -1;
+		if ( ret < mo )
+			ret = mo;
+	}
+	ret += 1;
+	model.molInfo.at(name)->order = ret;
+	return ret;
+}
+
 ////////////////////////////////////////////////////////////////////
 
 /*
@@ -280,6 +295,46 @@ void Model::assignReacSeq( const string& name, int seq )
 {
 	auto ri = reacInfo.at( name ); // Assume it is good.
 	sortedReacInfo[seq].push_back( ri );
+}
+
+bool onnit( vector< const ReacInfo* >::const_iterator ri, const vector< string >& myvec )
+{
+	for ( auto f = myvec.begin(); f != myvec.end(); f++ ) {
+		if ( *f == (*ri)->name || *f == (*ri)->grp )
+			return true;
+	}
+	return false;
+}
+
+void Model::modifySched( const vector< string >& saveList, const vector< string >& deleteList )
+{
+	unsigned int numSeq = sortedReacInfo.size();
+	vector< vector< const ReacInfo* > > newsri(numSeq);
+	if ( saveList.size() > 0 ) {
+		for (unsigned int seq = 0; seq < numSeq; seq++ ) {
+			auto sri = &(sortedReacInfo[seq] );
+			for( auto ri = sri->begin(); ri != sri->end(); ri++ ) {
+				if ( deleteList.size() > 0 ) {
+					if ( onnit( ri, saveList ) && !onnit( ri, deleteList ) )
+						newsri[seq].push_back( *ri );
+				} else {
+					if ( onnit( ri, saveList ) )
+						newsri[seq].push_back( *ri );
+				}
+			}
+		}
+		sortedReacInfo = newsri;
+	} else if ( deleteList.size() > 0 ) {
+		for (unsigned int seq = 0; seq < numSeq; seq++ ) {
+			auto sri = &(sortedReacInfo[seq] );
+			for( auto ri = sri->begin(); ri != sri->end(); ri++ ) {
+				if ( !onnit( ri, deleteList ) )
+					newsri[seq].push_back( *ri );
+			}
+		}
+		sortedReacInfo = newsri;
+	}
+	// If both lists are empty, just retain original sortedReacInfo.
 }
 
 void Model::advance( double runtime, int settle )
@@ -404,4 +459,19 @@ vector< double > Model::getConcVec( int index ) const
 	for( unsigned int i = 0; i < ret.size(); ++i )
 		ret[i] = plotvec[i][index];
 	return ret;
+}
+
+int Model::getMolOrder( const string& molName ) const
+{
+	return molInfo.at(molName)->order;
+}
+
+bool Model::updateMolOrder( int maxOrder, const string& molName ) const
+{
+	auto mi = molInfo.at( molName );
+	if (mi->order < 0) {
+		mi->order = maxOrder;
+		return true;
+	}
+	return false;
 }

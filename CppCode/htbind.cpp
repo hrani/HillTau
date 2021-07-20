@@ -45,6 +45,7 @@ PYBIND11_MODULE(ht, m) {
 		.def_readonly("HillCoeff", &ReacInfo::HillCoeff)
 		.def_readonly("subs", &ReacInfo::subs)
 		.def( "eval", &ReacInfo::eval, "Evaluator for Reacs" )
+		.def( "getReacOrder", &ReacInfo::getReacOrder, "Returns 1+largest of substrate mol orders, and updates ReacMol accordingly.", py::arg("model") )
 		.def( "concInf", &ReacInfo::concInf, "Computes steady-state value of reaction output" );
 
 	/////////////////////////////////////////////////////////////////////
@@ -79,6 +80,9 @@ PYBIND11_MODULE(ht, m) {
 		.def( "reinit", &Model::reinit, "Reinits all conc values" )
 		.def( "allocConc", &Model::allocConc, "Allocates and initializes conc vectors" )
 		.def( "getConcVec", &Model::getConcVec, "Returns vector of doubles of conc as a function of time for specified mol index." )
+		.def( "getMolOrder", &Model::getMolOrder, "Returns order of named molecule.", py::arg( "molName" ) )
+		.def( "updateMolOrder", &Model::updateMolOrder, "Checks if order of named molecule is <0, if so updates it and returns True.", py::arg( "maxOrder"), py::arg( "molName" ) )
+		.def( "modifySched", &Model::modifySched, "Modifies scheduling to retain/eliminate subsets of reactions and groups.", py::arg("saveList"), py::arg("deleteList") )
 		;
 }
 

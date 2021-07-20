@@ -258,13 +258,17 @@ def parseModel( jsonDict ):
     model.reinit()
     return model
 
-def breakReacLoop( model, maxOrder, numLoopsBroken  ):
-    for reacname, reac in sorted( model.reacInfo.items() ):
+def breakReacLoop( sri, model, maxOrder ):
+    for reacname, reac in sri:
+        if model.updateMolOrder( maxOrder, reacname ):
+            return
+        '''
         if model.molInfo[reacname].order < 0:
             model.molInfo[reacname].order = maxOrder
             #print( " BREAK LOOP on ", reacname, " ", maxOrder)
             #print("Warning; Reaction order loop. Breaking {} loop for {}, assigning order: {}".format( numLoopsBroken, reacname, maxOrder ) )
             return
+        '''
 
 '''
 def breakEqnLoop( model, maxOrder, numLoopsBroken  ):
@@ -282,15 +286,25 @@ def sortReacs( model ):
     numLoopsBroken = 0
     numOrdered = 0
     numReac = len( model.reacInfo )
+    sri = sorted( model.reacInfo.items() )
     while numOrdered < numReac: 
         numOrdered = 0
         stuck = True
-        for reacname, reac in sorted( model.reacInfo.items() ):
-            prevOrder = model.molInfo[reacname].order
+        #for reacname, reac in sorted( model.reacInfo.items() ):
+        for reacname, reac in sri:
+            #prevOrder = model.molInfo[reacname].order
+            prevOrder = model.getMolOrder(reacname)
             maxOrder = max( maxOrder, prevOrder )
             if prevOrder >= 0:
                 numOrdered += 1
             else:
+                order = reac.getReacOrder( model )
+                # As a side effect it assigns model.molInfo[reacname].order
+                if order >= 0:
+                    maxOrder = max( maxOrder, order )
+                    numOrdered += 1
+                    stuck = False
+                '''
                 order = [ model.molInfo[i].order for i in reac.subs ]
                 if min( order ) >= 0:
                     mo = max( order ) + 1
@@ -298,37 +312,15 @@ def sortReacs( model ):
                     maxOrder = max( maxOrder, mo )
                     numOrdered += 1
                     stuck = False
+                '''
         #print ( "numOrdered = ", numOrdered, " / ", numReac, " max = ", maxOrder )
         if stuck:
-            breakReacLoop( model, maxOrder+1, numLoopsBroken )
+            breakReacLoop( sri, model, maxOrder+1 )
             numLoopsBroken += 1
 
     # We don't need to sort equations, because they do not cascade.
     # They are all executed in a bunch after the reacs, at which point
     # there should be no unknowns
-    '''
-    numEqn = len( model.eqnInfo )
-    numOrdered = 0
-    while numOrdered < numEqn: 
-        numOrdered = 0
-        stuck = True
-        for eqname, eqn in sorted( model.eqnInfo.items() ):
-            prevOrder = model.molInfo[eqname].order
-            maxOrder = max( maxOrder, prevOrder )
-            if prevOrder >= 0:
-                numOrdered += 1
-                continue
-            order = [ model.molInfo[i].order for i in eqn.subs ]
-            if min( order ) >= 0:
-                mo = max( order ) + 1
-                maxOrder = max( maxOrder, mo )
-                model.molInfo[eqname].order = mo
-                numOrdered += 1
-                stuck = False
-        if stuck:
-            breakEqnloop( model, maxOrder+1, numLoopsBroken )
-            numLoopsBroken += 1
-    '''
 
     maxOrder += 1
     model.setReacSeqDepth( maxOrder )

@@ -49,6 +49,7 @@ class ReacInfo
 			double eval( Model* model, double dt ) const;
 			double getKA() const;
 			void setKA( double val );
+			int getReacOrder( const Model& model );
 
 	private:
 			unsigned int hillIndex;
@@ -101,6 +102,9 @@ class Model
 			void parseEqns();
 			void reinit();
 			vector< double > getConcVec( int index ) const;
+			void modifySched( const vector< string >& saveList, const vector< string >& deleteList );
+			int getMolOrder( const string& molName ) const;
+			bool updateMolOrder(int maxOrder, const string& molName) const;
 	private:
 			vector< vector< const ReacInfo* > > sortedReacInfo;
 };
