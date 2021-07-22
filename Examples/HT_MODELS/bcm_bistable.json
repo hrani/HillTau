@@ -1,4 +1,6 @@
 {
+	"FileType": "HillTau",
+	"Version": "1.0",
 	"Author": "Upi Bhalla",
 	"Description": "Synaptic plasticity",
 	"Comment": "Conc units are uM, time units are seconds",

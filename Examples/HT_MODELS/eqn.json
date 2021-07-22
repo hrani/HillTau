@@ -1,4 +1,6 @@
 {
+	"FileType": "HillTau",
+	"Version": "1.0",
 	"Author": "Upi Bhalla",
 	"Description": "Test case for Equation",
 	"Comment": "Conc units are milliMolar, time units are seconds",

@@ -1,4 +1,6 @@
 {
+	"FileType": "HillTau",
+	"Version": "1.0",
 	"Author": "Upi Bhalla",
 	"Description": "Excitation model",
 	"Comment": "Conc units are uMolar, time units are seconds",

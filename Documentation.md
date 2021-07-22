@@ -232,12 +232,12 @@ HillTau uses a JSON format and this is fully specified by a schema file:
 
 	hillTauSchema.json
 
-We have implemented a prototype read/write of HillTau models into SBML, but 
-this only can represent the structure of the model for examination by SBML
-editors and pathway illustrators, and is not designed for execution by other 
-SBML simulators. In other words, regular SBML simulators would
-not be able to compute HillTau models, nor would HillTau know what to do with
-most existing SBML models.
+HillTau has a conversion program **ht2sbml** into SBML, which generates
+models that are topologically accurate. These models can be simulated by 
+several ODE simulators that read SBML. The conversion is not perfect because
+the assumptions in ODE rate models differ from those in HillTau. Specifically,
+ODE solvers don't understand the different *tau* and *tau2* terms in HillTau.
+The resultant models can be examined by SBML editors and pathway illustrators.
 
 ### Units
 
@@ -406,6 +406,8 @@ Here is a complete example model, illustrating many of the features above:
 
 
 	{
+		"FileType": "HillTau",
+		"Version": "1.0",
 		"Author": "Upi Bhalla",
 		"Description": "Test case for Equation",
 		"Comment": "Conc units are microMolar, time units are seconds",

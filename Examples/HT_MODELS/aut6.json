@@ -1,4 +1,6 @@
 {
+	"FileType": "HillTau",
+	"Version": "1.0",
     "Comment": "Conc units are uM, time units are seconds", 
     "quantityUnits": "uM", 
     "Description": "Synaptic activity-driven protein synthesis", 

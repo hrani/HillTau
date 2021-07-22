@@ -1,4 +1,6 @@
 {
+	"FileType": "HillTau",
+	"Version": "1.0",
 	"Author": "Upi Bhalla",
 	"Description": "Excitation model, but with a gain of 2.0",
 	"Comment": "Conc units are milliMolar, time units are seconds",

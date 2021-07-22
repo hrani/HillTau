@@ -1,4 +1,6 @@
 {
+	"FileType": "HillTau",
+	"Version": "1.0",
 	"Author": "Upi Bhalla",
 	"Description": "Feedforward inhibition",
 	"Comment": "Conc units are microMolar, time units are seconds",
