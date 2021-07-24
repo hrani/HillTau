@@ -310,6 +310,26 @@ class Model():
     def getConcVec( self, molIndex ):
         return np.array( [ v[molIndex] for v in self.plotvec ] )
 
+    def modifySched( self, saveList, deleteList ):
+        numSeq = len( self.sortedReacInfo )
+        newsri = [[]] * numSeq
+        if len( saveList ) > 0:
+            for seq in range( numSeq ):
+                sri = self.sortedReacInfo[seq]
+                for ri in sri:
+                    if len( deleteList ) > 0 :
+                        if ri in saveList and not (ri in deleteList):
+                            newsri[seq].append( ri )
+                    elif ri in saveList:
+                        newsri[seq].append( ri )
+            self.sortedReacInfo = newsri
+        elif len( deleteList ) > 0:
+            for seq in range( numSeq ):
+                sri = self.sortedReacInfo[seq]
+                for ri in sri:
+                    if not ( ri in deleteList ):
+                        newsri[seq].append( ri )
+            self.sortedReacInfo = newsri
 
 def getQuantityScale( jsonDict ): 
     qu = jsonDict.get( "QuantityUnits" )
