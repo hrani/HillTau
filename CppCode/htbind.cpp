@@ -65,6 +65,7 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("reacInfo", &Model::reacInfo)
 		.def_readwrite("eqnInfo", &Model::eqnInfo)
 		.def_readwrite("grpInfo", &Model::grpInfo)
+		.def_readwrite("namedConsts", &Model::namedConsts)
 		.def_readonly("currentTime", &Model::currentTime)
 		.def_readwrite("dt", &Model::dt)
 		.def_readwrite("conc", &Model::conc)

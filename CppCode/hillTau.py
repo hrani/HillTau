@@ -181,6 +181,7 @@ def parseModel( jsonDict ):
     consts = jsonDict.get( "Constants" )
     if not consts:
         consts = {}
+    model.namedConsts = consts
     eqnSubs = {}
     # First, pull together all the species names. They crop up in
     # the Species, the Reacs, and the Eqns. They should be used as

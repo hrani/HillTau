@@ -84,6 +84,7 @@ class Model
 			map< string, ReacInfo* > reacInfo;
 			map< string, EqnInfo* > eqnInfo;
 			vector< string > grpInfo;
+			map< string, double > namedConsts;
 			double currentTime;
 			int step;
 			double dt;

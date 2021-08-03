@@ -239,6 +239,7 @@ class Model():
         self.reacInfo = {}
         self.eqnInfo = {}
         self.grpInfo = []
+        self.namedConsts = {}
         self.sortedReacInfo = []
         self.currentTime = 0.0
         self.step = 0
@@ -360,7 +361,7 @@ def scaleConst( holder, name, qs, consts, constDone ):
 
 def scaleDict( jsonDict, qs ):
     # This acts before parsing the model, so it should leave the model
-    # definiation layout intact. That means it should scale the
+    # definition layout intact. That means it should scale the
     # constants rather than fill in values where the the constants are
     # cited in the model. This means we have to take care not to scale
     # a given constant more than once, as it may be used many times.
