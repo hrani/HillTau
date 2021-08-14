@@ -119,7 +119,7 @@ only use the remaining ones.
 	                        Optional: Molecules to monitor, as a list of space-
 	                        separated names. If names differ between chemical and
 	                        HillTau models, both can be specified, separated by a
-	                        slash. Example: Ca/Calcium.
+	                        colon. Example: Ca:Calcium.
 	  -b molecule midconc midtime, --builtin molecule midconc midtime
 	                        Optional: Deliver builtin stimulus. This is a dose-
 	                        response centered around midconc, with a settling time
@@ -130,7 +130,7 @@ only use the remaining ones.
 	                        for 17. If multiple builtin stimuli are specified,
 	                        they will be executed in order, without overlap. If
 	                        molecule names are different between chem and HillTau
-	                        models, they should be separated by a slash.
+	                        models, they should be separated by a colon.
 	  -c molecule conc onTime offTime num_cycles, --cyclic molecule conc onTime offTime num_cycles
 	                        Optional: Deliver cyclic stimulus. This is a
 	                        timeseries of rectangular pulses from 0 to conc, with
@@ -138,7 +138,7 @@ only use the remaining ones.
 	                        num_cycles. Before the first cycle, and after the last
 	                        cycle it runs for another "offTime" seconds at conc =
 	                        0. If molecule names are different between chem and
-	                        HillTau models, they should be separated by a slash.
+	                        HillTau models, they should be separated by a colon.
 	  -d molecule midconc settle_time, --dose_response molecule midconc settle_time
 	                        Optional: Deliver dose-response stimulus centered
 	                        around midconc, with a settling time of settle_time.
@@ -146,7 +146,7 @@ only use the remaining ones.
 	                        specified, they will be executed in order, without
 	                        overlap. If molecule names are different between chem
 	                        and HillTau models, they should be separated by a
-	                        slash.
+	                        colon.
 	  -a obj.field [obj.field ...], --addParams obj.field [obj.field ...]
 	                        Optional: Add parameter list. This will remove all the
 	                        automatic ones obtained by scanning through the model,
@@ -154,7 +154,7 @@ only use the remaining ones.
 	                        parameter is of the form object.field. Any number of
 	                        parameters can be added, separated by spaces. If
 	                        molecule names are different between chem and HillTau
-	                        models, they should be separated by a slash
+	                        models, they should be separated by a colon
 	  -r param [param ...], --removeParams param [param ...]
 	                        Optional: Remove parameters from the default ones
 	                        which were generated automatically by scanning all the
