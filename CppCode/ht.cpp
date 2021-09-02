@@ -422,13 +422,6 @@ void Model::allocConc()
 	conc = concInit;
 }
 
-// Assigns both the conc and concInit vector entries.
-void Model::setConc( const string& objName, double value )
-{
-	unsigned int idx = molInfo.at(objName)->index;
-	concInit[idx] = conc[idx] = value;
-}
-
 void Model::reinit()
 {
 	// Logic: Any explicitly defined initialization value is to be used

@@ -100,7 +100,6 @@ class Model
 			void assignReacSeq( const string& name, int seq );
 			void advance( double runtime, int settle );
 			void allocConc();
-			void setConc( const string& objName, double value );
 			void parseEqns();
 			void reinit();
 			vector< double > getConcVec( int index ) const;
