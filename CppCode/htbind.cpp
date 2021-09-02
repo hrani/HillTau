@@ -80,6 +80,7 @@ PYBIND11_MODULE(ht, m) {
 		.def( "advance", &Model::advance, "Advances the simulation", py::arg( "runtime" ), py::arg( "settle" ) = 0 )
 		.def( "reinit", &Model::reinit, "Reinits all conc values" )
 		.def( "allocConc", &Model::allocConc, "Allocates and initializes conc vectors" )
+		.def( "setConc", &Model::setConc, "Looks up mol index and assigns values into conc and concInit vectors", py::arg( "objName"), py::arg( "value" ) )
 		.def( "getConcVec", &Model::getConcVec, "Returns vector of doubles of conc as a function of time for specified mol index." )
 		.def( "getMolOrder", &Model::getMolOrder, "Returns order of named molecule.", py::arg( "molName" ) )
 		.def( "updateMolOrder", &Model::updateMolOrder, "Checks if order of named molecule is <0, if so updates it and returns True.", py::arg( "maxOrder"), py::arg( "molName" ) )

@@ -160,6 +160,7 @@ double ReacInfo::concInf( const vector< double >& conc ) const
 {
 	double h = pow( conc[ hillIndex ], HillCoeff );
 	double mod = 1.0;
+	// cout << name << ":	vec = " << conc[reagIndex] << 	"	" << conc[hillIndex] << "	" << conc[modIndex] << endl;
 	if ( modIndex != ~0U ) {
 		// mod = conc[ modIndex ] / Kmod;
 		double x = pow( conc[ modIndex ] / Kmod, Nmod );
@@ -289,6 +290,10 @@ void Model::setReacSeqDepth( int maxDepth )
 		throw( "Error: maxDepth must be >= 1" );
 	sortedReacInfo.clear();
 	sortedReacInfo.resize( maxDepth );
+	sortedEqnInfo.clear();
+	for ( auto eri = eqnInfo.begin(); eri != eqnInfo.end(); eri++ ) {
+		sortedEqnInfo.push_back( eri->second );
+	}
 }
 
 void Model::assignReacSeq( const string& name, int seq )
@@ -297,14 +302,24 @@ void Model::assignReacSeq( const string& name, int seq )
 	sortedReacInfo[seq].push_back( ri );
 }
 
-bool onnit( vector< const ReacInfo* >::const_iterator ri, const vector< string >& myvec )
+bool onnit( vector< const ReacInfo* >::const_iterator ri, const vector< string >& saveList )
 {
-	for ( auto f = myvec.begin(); f != myvec.end(); f++ ) {
+	for ( auto f = saveList.begin(); f != saveList.end(); f++ ) {
 		if ( *f == (*ri)->name || *f == (*ri)->grp )
 			return true;
 	}
 	return false;
 }
+
+bool eonnit( const EqnInfo* eri, const vector< string >& saveList )
+{
+	for ( auto f = saveList.begin(); f != saveList.end(); f++ ) {
+		if ( *f == eri->name || *f == eri->grp )
+			return true;
+	}
+	return false;
+}
+
 
 void Model::modifySched( const vector< string >& saveList, const vector< string >& deleteList )
 {
@@ -323,16 +338,45 @@ void Model::modifySched( const vector< string >& saveList, const vector< string 
 				}
 			}
 		}
-		sortedReacInfo = newsri;
+        sortedReacInfo.clear();
+		for (auto sri = newsri.begin(); sri != newsri.end(); sri++ ) {
+            if ( sri->size() > 0 ) {
+                sortedReacInfo.push_back( *sri );
+			}
+        }
+		sortedEqnInfo.clear();
+		for ( auto eri = eqnInfo.begin(); eri != eqnInfo.end(); eri++ ) {
+			if ( deleteList.size() > 0 ) {
+				if ( eonnit( eri->second, saveList ) && !eonnit( eri->second, deleteList ) ) {
+					sortedEqnInfo.push_back( eri->second );
+				}
+			} else {
+				if ( eonnit( eri->second, saveList ) ) {
+					sortedEqnInfo.push_back( eri->second );
+				}
+			}
+		}
 	} else if ( deleteList.size() > 0 ) {
 		for (unsigned int seq = 0; seq < numSeq; seq++ ) {
 			auto sri = &(sortedReacInfo[seq] );
 			for( auto ri = sri->begin(); ri != sri->end(); ri++ ) {
-				if ( !onnit( ri, deleteList ) )
+				if ( !onnit( ri, deleteList ) ) {
 					newsri[seq].push_back( *ri );
+				}
 			}
 		}
-		sortedReacInfo = newsri;
+        sortedReacInfo.clear();
+		for (auto sri = newsri.begin(); sri != newsri.end(); sri++ ) {
+            if ( sri->size() > 0 ) {
+                sortedReacInfo.push_back( *sri );
+			}
+        }
+		sortedEqnInfo.clear();
+		for ( auto eri = eqnInfo.begin(); eri != eqnInfo.end(); eri++ ) {
+			if ( !eonnit( eri->second, deleteList ) ) {
+					sortedEqnInfo.push_back( eri->second );
+			}
+		}
 	}
 	// If both lists are empty, just retain original sortedReacInfo.
 }
@@ -357,8 +401,8 @@ void Model::advance( double runtime, int settle )
 				(*ri)->eval( this, newdt );
 			}
 		}
-		for (auto e = eqnInfo.begin(); e != eqnInfo.end(); ++e ) {
-			e->second->eval( conc );
+		for (auto e = sortedEqnInfo.begin(); e != sortedEqnInfo.end(); ++e ) {
+			(*e)->eval( conc );
 		}
 
 		if ( floor( (currentTime + t + newdt ) / dt ) > step ) {
@@ -376,6 +420,13 @@ void Model::allocConc()
 		concInit[ m->second->index ] = m->second->concInit;
 	}
 	conc = concInit;
+}
+
+// Assigns both the conc and concInit vector entries.
+void Model::setConc( const string& objName, double value )
+{
+	unsigned int idx = molInfo.at(objName)->index;
+	concInit[idx] = conc[idx] = value;
 }
 
 void Model::reinit()

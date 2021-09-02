@@ -100,6 +100,7 @@ class Model
 			void assignReacSeq( const string& name, int seq );
 			void advance( double runtime, int settle );
 			void allocConc();
+			void setConc( const string& objName, double value );
 			void parseEqns();
 			void reinit();
 			vector< double > getConcVec( int index ) const;
@@ -108,4 +109,5 @@ class Model
 			bool updateMolOrder(int maxOrder, const string& molName) const;
 	private:
 			vector< vector< const ReacInfo* > > sortedReacInfo;
+			vector< const EqnInfo* > sortedEqnInfo;
 };
