@@ -314,8 +314,9 @@ bool onnit( vector< const ReacInfo* >::const_iterator ri, const vector< string >
 bool eonnit( const EqnInfo* eri, const vector< string >& saveList )
 {
 	for ( auto f = saveList.begin(); f != saveList.end(); f++ ) {
-		if ( *f == eri->name || *f == eri->grp )
+		if ( *f == eri->name || *f == eri->grp ) {
 			return true;
+		}
 	}
 	return false;
 }

@@ -379,10 +379,12 @@ def main():
 
     stimvec = []
     
+    stimMolNames = []
     for i in args.stimulus:
         if len( i ) < 2:
             print( "Warning: need at least 2 args for stimulus, got {i}".format( i ) )
             continue
+        stimMolNames.append( i[0] )
         i[1] = float( i[1] ) * qs # Assume stim units same as model units.
         if len(i) == 2:
             i.extend( [0.0, runtime] )
@@ -395,6 +397,8 @@ def main():
         stimvec.append( Stim( i, model, off = True ) )
 
     stimvec.sort( key = Stim.stimOrder )
+    model.modifySched( saveList = [], deleteList = list( set( stimMolNames ) ) )
+    
 
     model.reinit()
     currTime = 0.0
