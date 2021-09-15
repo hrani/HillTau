@@ -274,9 +274,10 @@ class Model():
                 newdt = 10.0 ** ( np.floor( np.log10( runtime / 2.0 ) ) )
 
         # The above guarantees that newdt <= self.dt, except dose response
-        for t in np.arange( 0.0, runtime, newdt ):
+        t = 0.0
+        while t < runtime:
             # Sometimes we have runtimes that are not a multiple of self.dt
-            if ( runtime - t) < newdt:
+            if newdt > ( runtime - t):
                 newdt = runtime - t
 
             # Here we advance the simulation
@@ -290,6 +291,7 @@ class Model():
             if np.floor( (self.currentTime + t + newdt)/ self.dt ) > self.step:
                 self.step += 1
                 self.plotvec.append( np.array( self.conc ) )
+            t += newdt
         self.currentTime += runtime
                 
     def neatRound( x ):
