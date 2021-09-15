@@ -68,6 +68,7 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("namedConsts", &Model::namedConsts)
 		.def_readonly("currentTime", &Model::currentTime)
 		.def_readwrite("dt", &Model::dt)
+		.def_readwrite("internalDt", &Model::internalDt)
 		.def_readwrite("conc", &Model::conc)
 		.def_readwrite("concInit", &Model::concInit)
 		.def_readonly("plotvec", &Model::plotvec)

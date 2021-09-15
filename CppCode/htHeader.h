@@ -88,6 +88,7 @@ class Model
 			double currentTime;
 			int step;
 			double dt;
+			double internalDt;
 			vector< double > conc;
 			vector< double > concInit;
 			vector< vector< double > > plotvec;

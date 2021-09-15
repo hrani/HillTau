@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 #sys.path.insert(1, '/home/bhalla/homework/HILLTAU/REPO/HillTau/PythonCode')
 import hillTau
 
+# To add: 
+# Check for subsetting
+# Check for automatic buffering of stimulated molecules
+
 ERR_LIMIT = 1e-6
 
 stimVec = [
@@ -19,11 +23,11 @@ stimVec = [
     ["conv", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["conv2ndOrder", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["exc_tau_baseline", "input", [1e-3, 10, 0, 20], "output", [0.7638e-3, 10.75, 1.0e-3, 20, 0.684e-3, 25]],
-    ["ff_inhib", "input", [1e-3, 20, 0, 40], "output", [0.2705e-3, 25, 0.061e-3, 40, 0, 60]],
+    ["ff_inhib", "input", [1e-3, 20, 0, 40], "output", [0.28e-3, 25, 0.0614e-3, 40, 0, 60]],
     ["fb_inhib", "input", [1e-3, 20, 0, 60], "output", [0.755e-3, 25, 0.188e-3, 60, 0, 100]],
     ["gain", "input", [1e-3, 10, 0, 20], "output", [0.5276e-3, 10.75, 1e-3, 20, 0.0, 30]],
     ["modifier", "input", [1e-3, 10, 0, 20], "output", [0.474e-3, 11, 0.75e-3, 20, 0.0, 30]],
-    ["bistable", "stim", [1, 0, 100, 20, 1, 30, 0.01, 50, 1, 52, .01, 70, 1, 80], "output", [0.0217, 20, 0.52, 50, 0.52, 70, 0.0217, 100]],
+    ["bistable", "stim", [1, 0, 100, 20, 1, 30, 0.01, 50, 1, 51, .01, 70, 1, 80], "output", [0.0217, 20, 0.52, 50, 0.52, 70, 0.0217, 100]],
     ["bcm_bistable", "Ca", [2e-3, 15, 0.08e-3, 16, 0.4e-3, 35, 0.08e-3, 45], "synAMPAR", [0.207e-6, 15, 0.8205e-3, 20, 0.8331e-3, 30, 0.21e-6, 60 ]],
 ]
 

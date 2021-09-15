@@ -23,6 +23,8 @@ PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
+const double INTERNAL_DT_SCALE = 0.5;
+
 MolInfo::MolInfo( const std::string& name_, const std::string& grp_, double concInit_ = -1.0 ):
 	name(name_),
 	grp( grp_ ),
@@ -385,11 +387,11 @@ void Model::modifySched( const vector< string >& saveList, const vector< string 
 void Model::advance( double runtime, int settle )
 {
 	if (runtime < 10e-6) return;
-	double newdt = dt;
+	double newdt = min( dt, internalDt);
 	if (settle) {
 		newdt = runtime / 10.0;
 	} else {
-		if ( dt >= runtime / 2.0 )
+		if ( newdt >= runtime / 2.0 )
 			newdt = pow( 10.0, floor( log10( runtime / 2.0 ) ) );
 	}
 
@@ -423,6 +425,18 @@ void Model::allocConc()
 	conc = concInit;
 }
 
+double neatRound( double x )
+{
+	if (x <= 0.0)
+		return 0.0;
+	double y = pow( 10.0, floor( log10( x ) ) );
+	if ( (x/y) >= 5.0 )
+		return y * 5.0;
+	else if ( (x/y) >= 2.0 )
+		return y * 2.0;
+	return y;
+}
+
 void Model::reinit()
 {
 	// Logic: Any explicitly defined initialization value is to be used
@@ -431,8 +445,11 @@ void Model::reinit()
 	// value of the reacns.
 	currentTime = 0.0;
 	step = 0;
+	internalDt = dt;
+	double minTau = 1e20; // dt should be < 0.25x smallest tau at input.
 	for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); r++) {
 		for (auto ri = r->begin(); ri != r->end(); ri++) {
+			minTau = min( min( minTau, (*ri)->tau ), (*ri)->tau2 );
 			if ( (*ri)->overrideConcInit ) {
 				unsigned int j = (*ri)->prdIndex;
 				if ((*ri)->inhibit ) {
@@ -444,6 +461,9 @@ void Model::reinit()
 				}
 			}
 		}
+	}
+	if ( dt > INTERNAL_DT_SCALE * minTau ) {
+		internalDt = neatRound( INTERNAL_DT_SCALE * minTau );
 	}
 	auto ci = concInit.begin();
 	for (auto c = conc.begin(); c < conc.end(); c++, ci++ ) {

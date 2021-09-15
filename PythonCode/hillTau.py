@@ -33,6 +33,8 @@ import matplotlib.pyplot as plt
 
 lookupQuantityScale = { "M": 1000.0, "mM": 1.0, "uM": 1e-3, "nM": 1e-6, "pM": 1e-9 }
 
+INTERNAL_DT_SCALE = 0.5
+
 SIGSTR = "{:.4g}" # Used to format floats to keep to 4 sig fig. Helps when dumping JSON files.
 
 mathFns = ["exp", "log", "ln", "log10", "abs", "sin", "cos", "tan", "sinh", "cosh", "tanh", "sqrt", "pow"]
@@ -249,6 +251,7 @@ class Model():
         self.plotvec = []
         self.runtime = 0.0
         self.dt = 1.0
+        self.internalDt = 1.0
 
     '''
     def setConc( self, molName, val ):
@@ -266,7 +269,7 @@ class Model():
             # do 10 steps. 
             newdt = runtime / 10.0
         else:
-            newdt = self.dt
+            newdt = min( self.dt, self.internalDt )
             if newdt >= runtime / 2.0:
                 newdt = 10.0 ** ( np.floor( np.log10( runtime / 2.0 ) ) )
 
@@ -289,12 +292,25 @@ class Model():
                 self.plotvec.append( np.array( self.conc ) )
         self.currentTime += runtime
                 
+    def neatRound( x ):
+        if x <= 0.0:
+            return 0.0
+        y = pow( 10.0, np.floor( np.log10( x ) ) )
+        if x/y >= 5.0:
+            return y * 5.0
+        elif x/y >= 2.0:
+            return y * 2.0
+        return y
+
     def reinit( self ):
         # ConcInit is evaluated only for reactions not explicitly defined.
         self.currentTime = 0
         self.step = 0
+        self.internalDt = self.dt
+        minTau = 1.0e20
         for ar in self.sortedReacInfo:
             for r in ar:
+                minTau = min( minTau, r.tau, r.tau2 )
                 if r.overrideConcInit:
                     if r.inhibit:
                         self.concInit[ r.prdIndex ] = r.concInf( self.concInit ) + r.baseline
@@ -303,7 +319,11 @@ class Model():
                     else:
                         self.concInit[ r.prdIndex ] = r.baseline
 
-        # need to do this because Python defaults to shallow copy.
+        if self.dt > INTERNAL_DT_SCALE * minTau:
+            self.internalDt = Model.neatRound( INTERNAL_DT_SCALE * minTau )
+
+        # need to explicitly make new array because Python defaults to 
+        # shallow copy.
         # So if you change values in conc, they will change in concInit
         self.conc = np.array( self.concInit )
         del self.plotvec[:]
