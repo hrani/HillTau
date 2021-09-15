@@ -241,6 +241,7 @@ class Model():
         self.grpInfo = []
         self.namedConsts = {}
         self.sortedReacInfo = []
+        self.sortedEqnInfo = []
         self.currentTime = 0.0
         self.step = 0
         self.conc = np.zeros(1)
@@ -279,7 +280,7 @@ class Model():
             for ar in self.sortedReacInfo:
                 for r in ar:
                     r.eval( self, newdt )
-            for name, val in self.eqnInfo.items():
+            for val in self.sortedEqnInfo:
                 val.eval( self.conc )
 
             # Here we decide if we insert data into the plots.
@@ -324,13 +325,19 @@ class Model():
                     elif ri in saveList:
                         newsri[seq].append( ri )
             self.sortedReacInfo = newsri
-        elif len( deleteList ) > 0:
+            if len( deleteList ) > 0:
+                self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if key in saveList and not key in deleteList ]
+            else: 
+                self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if key in saveList ]
+        elif len( deleteList ) > 0: # Nothing on saveList
             for seq in range( numSeq ):
                 sri = self.sortedReacInfo[seq]
                 for ri in sri:
                     if not ( ri in deleteList ):
                         newsri[seq].append( ri )
             self.sortedReacInfo = newsri
+            self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if not key in deleteList ]
+        # If both lists are empty, retain original sortedReacInfo and sortedEqnInfo.
 
 def getQuantityScale( jsonDict ): 
     qu = jsonDict.get( "QuantityUnits" )
@@ -447,6 +454,7 @@ def parseModel( jsonDict ):
         model.consts = model.jsonDict['Constants']
     else:
         model.consts = {}
+    model.namedConsts = model.consts
 
     # Second, pull together all the species names. They crop up in
     # the Species, the Reacs, and the Eqns. They should be used as
@@ -558,6 +566,7 @@ def sortReacs( model ):
     for name, reac in model.reacInfo.items():
         order = model.molInfo[name].order
         model.sortedReacInfo[order].append( reac )
+    model.sortedEqnInfo = [ val for val in model.eqnInfo.values() ]
 
 def writeOutput( fname, model, plotvec, x ):
     with open( fname, "w" ) as fd:
@@ -609,10 +618,12 @@ def main():
 
     stimvec = []
     
+    stimMolNames = []
     for i in args.stimulus:
         if len( i ) < 2:
             print( "Warning: need at least 2 args for stimulus, got {i}".format( i ) )
             continue
+        stimMolNames.append( i[0] )
         i[1] = float( i[1] ) * qs # Assume stim units same as model units.
         if len(i) == 2:
             i.extend( [0.0, runtime] )
@@ -625,6 +636,7 @@ def main():
         stimvec.append( Stim( i, model, off = True ) )
 
     stimvec.sort( key = Stim.stimOrder )
+    model.modifySched( saveList = [], deleteList = list( set( stimMolNames )) )
 
     model.reinit()
     currTime = 0.0
