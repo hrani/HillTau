@@ -23,7 +23,7 @@ PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
-const double INTERNAL_DT_SCALE = 0.5;
+const double INTERNAL_DT_SCALE = 0.1;
 
 MolInfo::MolInfo( const std::string& name_, const std::string& grp_, double concInit_ = -1.0 ):
 	name(name_),
@@ -387,14 +387,27 @@ void Model::modifySched( const vector< string >& saveList, const vector< string 
 void Model::advance( double runtime, int settle )
 {
 	if (runtime < 10e-6) return;
-	double newdt = min( dt, internalDt);
 	if (settle) {
-		newdt = runtime / 10.0;
+		double newdt = runtime / 10.0;
+		innerAdvance( runtime, newdt );
 	} else {
-		if ( newdt >= runtime / 2.0 )
+		double newdt = min( dt, internalDt);
+		double adv = max( minTau / INTERNAL_DT_SCALE, dt );
+		if ( newdt >= runtime / 2.0 ) {
 			newdt = pow( 10.0, floor( log10( runtime / 2.0 ) ) );
+			innerAdvance( runtime, newdt );
+		} else if ( 2.0 * adv < runtime  )  {
+			// Advance a few small timesteps, then switch to longer ones
+			innerAdvance( adv, newdt );
+			innerAdvance( runtime - adv, dt );
+		} else { // All small dt
+			innerAdvance( runtime, newdt );
+		}
 	}
+}
 
+void Model::innerAdvance( double runtime, double newdt )
+{
 	for (double t = 0.0; t < runtime; t += newdt ) {
 		if ( newdt > (runtime - t) )
 			newdt = runtime - t;
@@ -446,7 +459,7 @@ void Model::reinit()
 	currentTime = 0.0;
 	step = 0;
 	internalDt = dt;
-	double minTau = 1e20; // dt should be < 0.25x smallest tau at input.
+	minTau = 1e20; // dt should be < 0.25x smallest tau at input.
 	for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); r++) {
 		for (auto ri = r->begin(); ri != r->end(); ri++) {
 			minTau = min( min( minTau, (*ri)->tau ), (*ri)->tau2 );

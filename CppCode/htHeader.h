@@ -88,7 +88,8 @@ class Model
 			double currentTime;
 			int step;
 			double dt;
-			double internalDt;
+			double internalDt;	// Timestep to use for internal calculations for time-series. Normally 0.2 * minTau.
+			double minTau;	// Smallest time-constant in model.
 			vector< double > conc;
 			vector< double > concInit;
 			vector< vector< double > > plotvec;
@@ -100,6 +101,7 @@ class Model
 			void setReacSeqDepth( int order );
 			void assignReacSeq( const string& name, int seq );
 			void advance( double runtime, int settle );
+			void innerAdvance( double runtime, double newdt );
 			void allocConc();
 			void parseEqns();
 			void reinit();

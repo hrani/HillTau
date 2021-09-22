@@ -69,6 +69,7 @@ PYBIND11_MODULE(ht, m) {
 		.def_readonly("currentTime", &Model::currentTime)
 		.def_readwrite("dt", &Model::dt)
 		.def_readwrite("internalDt", &Model::internalDt)
+		.def_readonly("minTau", &Model::minTau)
 		.def_readwrite("conc", &Model::conc)
 		.def_readwrite("concInit", &Model::concInit)
 		.def_readonly("plotvec", &Model::plotvec)
