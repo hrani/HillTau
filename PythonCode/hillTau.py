@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 
 lookupQuantityScale = { "M": 1000.0, "mM": 1.0, "uM": 1e-3, "nM": 1e-6, "pM": 1e-9 }
 
-INTERNAL_DT_SCALE = 0.5
+INTERNAL_DT_SCALE = 0.1
 
 SIGSTR = "{:.4g}" # Used to format floats to keep to 4 sig fig. Helps when dumping JSON files.
 
@@ -252,6 +252,7 @@ class Model():
         self.runtime = 0.0
         self.dt = 1.0
         self.internalDt = 1.0
+        self.minTau = 1.0
 
     '''
     def setConc( self, molName, val ):
@@ -267,12 +268,21 @@ class Model():
             # HillTau does this anyway, we jump fast. Only issue arises
             # if there are feedback processes. So to be conservative, 
             # do 10 steps. 
-            newdt = runtime / 10.0
+            innerAdvance( runtime, runtime / 10.0 )
         else:
             newdt = min( self.dt, self.internalDt )
+            adv = max( self.minTau / INTERNAL_DT_SCALE, self.dt )
             if newdt >= runtime / 2.0:
                 newdt = 10.0 ** ( np.floor( np.log10( runtime / 2.0 ) ) )
+                self.innerAdvance( runtime, newdt )
+            elif 2.0 * adv < runtime: 
+                # Advance a few small timesteps, then switch to regular dt
+                self.innerAdvance( adv, newdt )
+                self.innerAdvance( runtime - adv, self.dt )
+            else:   # all small dt
+                self.innerAdvance( runtime, newdt )
 
+    def innerAdvance( self, runtime, newdt ):
         # The above guarantees that newdt <= self.dt, except dose response
         t = 0.0
         while t < runtime:
@@ -309,10 +319,10 @@ class Model():
         self.currentTime = 0
         self.step = 0
         self.internalDt = self.dt
-        minTau = 1.0e20
+        self.minTau = 1.0e20
         for ar in self.sortedReacInfo:
             for r in ar:
-                minTau = min( minTau, r.tau, r.tau2 )
+                self.minTau = min( self.minTau, r.tau, r.tau2 )
                 if r.overrideConcInit:
                     if r.inhibit:
                         self.concInit[ r.prdIndex ] = r.concInf( self.concInit ) + r.baseline
@@ -321,8 +331,8 @@ class Model():
                     else:
                         self.concInit[ r.prdIndex ] = r.baseline
 
-        if self.dt > INTERNAL_DT_SCALE * minTau:
-            self.internalDt = Model.neatRound( INTERNAL_DT_SCALE * minTau )
+        if self.dt > INTERNAL_DT_SCALE * self.minTau:
+            self.internalDt = Model.neatRound( INTERNAL_DT_SCALE * self.minTau )
 
         # need to explicitly make new array because Python defaults to 
         # shallow copy.
