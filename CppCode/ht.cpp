@@ -23,7 +23,7 @@ PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
-const double INTERNAL_DT_SCALE = 0.1;
+const double INTERNAL_DT_SCALE = 0.02;
 
 MolInfo::MolInfo( const std::string& name_, const std::string& grp_, double concInit_ = -1.0 ):
 	name(name_),
@@ -392,7 +392,7 @@ void Model::advance( double runtime, int settle )
 		innerAdvance( runtime, newdt );
 	} else {
 		double newdt = min( dt, internalDt);
-		double adv = max( minTau / INTERNAL_DT_SCALE, dt );
+		double adv = max( minTau * 10.0, dt );
 		if ( newdt >= runtime / 2.0 ) {
 			newdt = pow( 10.0, floor( log10( runtime / 2.0 ) ) );
 			innerAdvance( runtime, newdt );

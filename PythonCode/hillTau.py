@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 
 lookupQuantityScale = { "M": 1000.0, "mM": 1.0, "uM": 1e-3, "nM": 1e-6, "pM": 1e-9 }
 
-INTERNAL_DT_SCALE = 0.1
+INTERNAL_DT_SCALE = 0.02
 
 SIGSTR = "{:.4g}" # Used to format floats to keep to 4 sig fig. Helps when dumping JSON files.
 
@@ -271,7 +271,7 @@ class Model():
             innerAdvance( runtime, runtime / 10.0 )
         else:
             newdt = min( self.dt, self.internalDt )
-            adv = max( self.minTau / INTERNAL_DT_SCALE, self.dt )
+            adv = max( self.minTau * 10.0, self.dt )
             if newdt >= runtime / 2.0:
                 newdt = 10.0 ** ( np.floor( np.log10( runtime / 2.0 ) ) )
                 self.innerAdvance( runtime, newdt )
