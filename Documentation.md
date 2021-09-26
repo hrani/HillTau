@@ -455,6 +455,55 @@ Python version, preserved for simplicity and to help people understand how it
 works. Even in the Python version, the basic HillTau algorithm is highly 
 efficient and much faster than ODE simulators for large models.
 
+### HillTau accuracy
+
+For **steady-state calculations**, HillTau has very good accuracy since 
+steady-state calculations are the first part of the formulation for every 
+reaction. HillTau simply takes very long time-steps
+to run the exponential decays down. There are a couple of subtle issues that
+arise if the system has interesting dynamical properties such as multistability.
+
+- Multiple stable states: HillTau detects feedback and runs for 10 long steps
+	to get these to settle, but it will end up at one of the stable states
+	depending on initial conditions.
+- Oscillatory systems: These have no stable states and at present HillTau 
+	does not report this situation.
+
+
+For **time-series calculations**, HillTau uses an automatic internal timestep 
+assignment to achieve better than 1% accuracy for almost all cases, regardless 
+of how long the readout time-steps may be. The current implementation does so
+by using short time-stems at the start of every epoch of the simulation.
+It takes very short time-steps of 5% of the shortest reaction time-course
+_tauMin_ in the system. It uses these short time-steps for at least 
+10 _tauMin_, and then reverts to the user-specified timestep. The rationale
+is that stimuli are normally delivered by assigning concentrations at the start
+of each epoch, and hence the fast transients are present then. After a few
+tau the transients settle down.
+Based on tests on several models this approach reliably gives <1% accuracy.
+This simple approach is not effective when the system is oscillatory,
+since the system dynamics are no longer dominated by initial transients.
+Here the user should assign model.dt manually to a small-enough value. 
+
+**Definition of accuracy**
+Above we use _accuracy_ to mean how closely do the HillTau outputs match those
+produced with a very small time-step. Note that HillTau is an approximation
+to mass-action chemistry, and uses abstracted models, so the usual caveats 
+apply to interpreting numerical accuracy as opposed to accuracy in modeling 
+biological systems.
+
+**Useful fields**
+
+The **Model** class of HillTau has some fields useful for managing accuracy:
+- _dt_ specifies the plotting timestep, and this is also the default
+	timestep for all calculations. Thus higher accuracy may always be
+	achieved by reducing _dt_, but this will lead to slower completion of
+	simulation runs.
+- _internalDt_ specifies the actual timestep used internally.
+- _minTau_ specifies the smallest reaction time-course, _tau_, in the entire
+	model.
+
+
 ### HillTau outputs
 
 These are accessed from the **Model** class. Use the following options:
