@@ -7,7 +7,7 @@
 using namespace std;
 
 namespace py = pybind11;
-#include <htHeader.h>
+#include "htHeader.h"
 
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
 PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);

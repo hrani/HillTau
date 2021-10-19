@@ -17,7 +17,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl_bind.h>
 using namespace std;
-#include <htHeader.h>
+#include "htHeader.h" 
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
 PYBIND11_MAKE_OPAQUE(std::map<string, MolInfo>);
 PYBIND11_MAKE_OPAQUE(std::map<string, ReacInfo>);
