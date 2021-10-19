@@ -35,8 +35,14 @@ import os
 import json
 import argparse
 import numpy as np
-import hillTau
 import simplesbml
+#sys.path.insert(1, 'CppCode/')
+
+if __package__ is None or __package__ == '':
+        from hillTau import *
+else:
+        from HillTau.CppCode import hillTau
+
 
 
 def conv2sbml( htfile, sbmlfile, stimMol = "", events = [] ):

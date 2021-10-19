@@ -86,8 +86,12 @@ import sys,os
 from subprocess import call
 import matplotlib
 from collections import OrderedDict
+from argparse import ArgumentParser
 
-from hillTau import *
+if __package__ is None or __package__ == '':
+        from CppCode import hillTau 
+else:
+        from HillTau.CppCode import hillTau 
 
 
 use_bw = False
@@ -374,7 +378,7 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 	return(edgelist,node_color,lig_exist,kmod_exist,inhibit_exist)
 		
 
-def file_choices(choices,fname,iotype):
+def file_choices(choices,fname,iotype,parser):
 	ext = (os.path.splitext(fname)[1][1:]).lower()
 	if iotype == "outputfile":
 		if ext not in choices:
@@ -385,12 +389,11 @@ def file_choices(choices,fname,iotype):
 			
 	return fname
 
-if __name__ == "__main__":
-
-	parser = argparse.ArgumentParser( description = 'This program generates a reaction diagram for a HillTau model. It converts the specified HillTau file in JSON format, to the dot format. The dot file is further converted to an image in png/svg format\n')
-	parser.add_argument('model',type=lambda s:file_choices(("json"),s,"input"), help='Required: filename of model, in JSON format.')
+def main():
+	parser = ArgumentParser( description = 'This program generates a reaction diagram for a HillTau model. It converts the specified HillTau file in JSON format, to the dot format. The dot file is further converted to an image in png/svg format\n')
+	parser.add_argument('model',type=lambda s:file_choices(("json"),s,"input",parser), help='Required: filename of model, in JSON format.')
 	#parser.add_argument( 'model', type = str, help='Required: filename of model, in JSON format.')
-	parser.add_argument( '-o', '--output', type=lambda out:file_choices(("png","svg"),out,"outputfile"), help='Optional: writes out the png model into named file. default takes json filename')
+	parser.add_argument( '-o', '--output', type=lambda out:file_choices(("png","svg"),out,"outputfile",parser), help='Optional: writes out the png model into named file. default takes json filename')
 	parser.add_argument( '-r', '--ranksep', type=float, default = 0, help='Optional: set rank separation (vertical spacing) in output.')
 	parser.add_argument( '-fs', '--fontsize', type=float, default = 18, help='Optional: set font size for node labels.')
 	parser.add_argument( '-nl', '--no_legend', action='store_true', help='Optional: Turns off generation of legend')
@@ -410,6 +413,10 @@ if __name__ == "__main__":
 	else:
 		outputfile = args.output
 
-	jsonDict = loadHillTau( args.model )
-	modelpath = parseModel( jsonDict )
+	jsonDict = hillTau.loadHillTau( args.model )
+	modelpath = hillTau.parseModel( jsonDict )
 	jsontoPng(modelpath, outputfile, ranksep = args.ranksep, hasLegend = not args.no_legend, fontsize = args.fontsize, showGroups = not args.no_groups,specific_group = args.specific_group )
+if __name__ == "__main__":
+	main()
+	
+	
