@@ -57,7 +57,7 @@ where you need it. <br>
 You can also run the standalone hillTau code from the command line like this:
 
 ```
-hillTau model\_file *arguments*	<br>
+hillTau model_file <arguments>
 ```
 
 *Tested on:*:
