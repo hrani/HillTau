@@ -33,16 +33,37 @@ structure of HillTau model.
 [Preprint for HillTau](https://www.biorxiv.org/content/10.1101/2020.09.20.305250v1), which discusses many aspects of its design and use.
 
 ## Installation
+
+**Simple and slow Python version:**
 Copy the two files hillTau.py and hillTauSchema.json from PythonCode to your
 target directory.<br>
 If you want to run the utilities, also copy *mash.py*, *ht2sbml.py* and 
 *htgraph.py* to the target directory.
 
-COMING SOON:
-
+**Complex and fast C++ version:**
 pip install hillTau<br>
 This will help install the _much_ faster C++ version of HillTau, with the same
 friendly Python interface.
+
+*Limitations:* 
+1. 	The pip install version has only been configured for Linux 
+	systems. Mac will come soon, and Windows is a work in progress.
+2. 	The *htgraph.py* script requires a separate installation of GraphViz.
+	This may be done on Linux systems using *sudo apt-get install GraphViz*
+
+
+Once the pip install is done, you can use *import hillTau* in any python script
+where you need it. <br>
+You can also run the standalone hillTau code from the command line like this:
+
+```
+hillTau model_file <arguments>
+```
+
+*Tested on:*:
+-	Ubuntu 20.x
+-	CentOS el7
+-	More to come soon.
 
 ## Versions
 The Python version of HillTau has been tested with Python 2.7.17 and Python 3.6.9<br>
