@@ -50,10 +50,15 @@ friendly Python interface.
 	systems. Mac will come soon, and Windows is a work in progress.
 2. 	The *htgraph.py* script requires a separate installation of GraphViz.
 	This may be done on Linux systems using *sudo apt-get install GraphViz*
+
+
 Once the pip install is done, you can use *import hillTau* in any python script
-where you need it.<br>
+where you need it. <br>
 You can also run the standalone hillTau code from the command line like this:
+
+```
 hillTau model\_file *arguments*	<br>
+```
 
 *Tested on:*:
 -	Ubuntu 20.x
