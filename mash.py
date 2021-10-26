@@ -39,8 +39,12 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import moose
-import moose.model_utils as mu
-import hillTau
+#import moose.model_utils as mu
+
+if __package__ is None or __package__ == '':
+    from CppCode import hillTau
+else:
+    from HillTau.CppCode import hillTau
 
 t1 = 20
 t2 = 60
@@ -205,7 +209,7 @@ def runMoose( chem, stimVec, outMols ):
         modelId = moose.loadModel( chem, 'model', 'gsl' )
     elif file_extension == ".xml":
         #modelId = mu.mooseReadSBML( chem, 'model', 'gsl' )
-        modelId = moose.readSBML( chem, 'model', 'gsl' )
+        modelId = moose.mooseReadSBML( chem, 'model', 'gsl' )
     '''
     moose.le( "/model/kinetics" )
     for i in moose.wildcardFind ( "/model/kinetics/##[ISA=PoolBase]" ):

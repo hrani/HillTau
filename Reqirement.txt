@@ -1,0 +1,7 @@
+numpy
+matplotlib
+pydot
+pymoose
+scipy
+graphviz
+simpleSBML
