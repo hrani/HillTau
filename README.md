@@ -50,7 +50,15 @@ friendly Python interface.
 	systems. Mac will come soon, and Windows is a work in progress.
 2. 	The *htgraph.py* script requires a separate installation of GraphViz.
 	This may be done on Linux systems using *sudo apt-get install GraphViz*
+3. 	The *mash.py* script requires a separate installation of the MOOSE
+	development branch.
+	This may be done on Linux systems by accessing the GitHub website
+	for MOOSE, checking it out, and compiling as per the instructions in 
+	INSTALL.md
 
+	```git clone https://github.com/BhallaLab/moose-core.git```
+
+	
 
 Once the pip install is done, you can use *import hillTau* in any python script
 where you need it. <br>
