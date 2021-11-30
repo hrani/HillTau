@@ -42,16 +42,11 @@ import moose
 import hillTau
 
 plotDt = 0.1
-char = ['A','A', 'B', 'C', 'D', 'E', 'E', 'F', 'G', 'H','I', 'J']
+char = ['A','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','I', 'J']
 
 def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = 'Time (s)', ylabel = 'Conc ($\mu$M)' ):
-    # Hack to put in full-row panel E
-    if plotPos == 5:
-        ax = plt.subplot( 4, 1, 3 )
-        panelX = -0.125
-    else:
-        panelX = -0.3
-        ax = plt.subplot( 4, 2, plotPos )
+    panelX = -0.3
+    ax = plt.subplot( 4, 2, plotPos )
     ax.spines['top'].set_visible( False )
     ax.spines['right'].set_visible( False )
     '''
@@ -66,7 +61,7 @@ def plotBoilerplate( panelTitle, plotPos, reacn, xlabel = 'Time (s)', ylabel = '
 def ts( chem, ht, ampl, plotPos, title = '' ):
     tsettle = 500 # This turns out to be needed for both models.
     tpre = 10
-    tstim = 1
+    tstim = 5
     tpost = 50
     modelId = moose.loadModel( chem, 'model', 'gsl' )
     Ca = moose.element( '/model/kinetics/Ca' )
@@ -112,7 +107,13 @@ def ts( chem, ht, ampl, plotPos, title = '' ):
     reacn = "this is ht"
     #ax = plotBoilerplate( "B", plotPos+1, reacn, xlabel = "Time (s)" )
     #ax.plot( x , 1000 * plotvec[inputMolIndex], label = "input" )
-    ax.plot( x , 1000 * plotvec[outputMolIndex][int(tsettle/plotDt):], label = "output" )
+    htvec = np.array( plotvec[outputMolIndex][int(tsettle/plotDt):] )
+    ax.plot( x , 1000 * htvec, label = "output" )
+    if len( htvec ) > len( ovec ):
+        dy = htvec[:len(ovec)] - ovec
+    else:
+        dy = htvec - ovec[:len(htvec)]
+    print( "time-series normalized rms diff =", np.sqrt( np.mean( dy * dy )) / np.max( htvec ))
 
 def bisBCM( ht, plotPos ):
     ltpAmpl = 2
@@ -140,9 +141,10 @@ def bisBCM( ht, plotPos ):
     plotvec = np.transpose( np.array( model.plotvec ) )
     x = np.array( range( plotvec.shape[1] ) ) * plotDt
     reacn = "ht"
-    ax = plotBoilerplate( char[plotPos], plotPos, "synSwitch", xlabel = "Time (s)", ylabel = "[synAMPAR] ($\mu$M)" )
-    ax.plot( x , plotvec[inputMolIndex] / qs, label = "Ca" )
-    ax.plot( x , plotvec[outputMolIndex] / qs, label = "synAMPAR" )
+    ax = plotBoilerplate( char[plotPos], plotPos, "", xlabel = "Time (s)", ylabel = "[synAMPAR] ($\mu$M)" )
+    ax.plot( x , plotvec[inputMolIndex] / qs, label = "Ca", color = "C2" )
+    ax.plot( x , plotvec[outputMolIndex] / qs, label = "synAMPAR", color = "C4" )
+    ax.legend()
 
 def doseResp( model, xIndex, yIndex ):
     model.dt = plotDt
@@ -180,13 +182,14 @@ def adv( model, inputMolIndex, t, dt, val ):
     return t
 
 def runDoser( kkit, ht, plotPos, title = "" ):
-    ax = plotBoilerplate( char[plotPos], plotPos, title, xlabel = "[Ca] ($\mu$M)                                                    ", ylabel = "[synAMPAR] ($\mu$M)" )
+    ax = plotBoilerplate( char[plotPos], plotPos, title, xlabel = "[Ca] ($\mu$M)", ylabel = "[synAMPAR] ($\mu$M)" )
     ax.set_xscale( "log" )
     ax.set_xlim( 0.01, 10 )
     ax.set_ylim( 0, 0.6 )
     modelId = moose.loadModel( kkit, 'model', 'gsl' )
     x, y = doseRespMoose()
     ax.plot( x , y, label = "Syn_vs_Ca_moose" )
+    moosey = np.array(y)
 
 
     jsonDict = hillTau.loadHillTau( ht )
@@ -196,14 +199,18 @@ def runDoser( kkit, ht, plotPos, title = "" ):
     CaMolIndex = model.molInfo.get( "Ca" ).index
     x, y = doseResp( model, CaMolIndex, outputMolIndex )
     ax.plot( x , y, label = "Syn_vs_Ca" )
+    hty = np.array( y )
+    dy = moosey - hty
+    print( "Dose-resp normalized rms diff =", np.sqrt( np.mean( dy * dy )) / np.max( hty ))
+
 
 def main():
-    fig = plt.figure( figsize = (6,9), facecolor='white' )
+    fig = plt.figure( figsize = (6,11.1), facecolor='white' )
     fig.subplots_adjust( left = 0.18 )
     ts( "KKIT_MODELS/bcm.g", "HT_MODELS/bcm.json", 0.5e-3, 3, title = "0.5 $\mu$M Ca stim" )
     ts( "KKIT_MODELS/bcm.g", "HT_MODELS/bcm.json", 5.0e-3, 4, title = "5 $\mu$M Ca stim" )
     runDoser( "KKIT_MODELS/bcm.g", "HT_MODELS/bcm.json", 5, title = "dose-response" )
-    bisBCM( "HT_MODELS/bcm_bistable.json", 8 )
+    bisBCM( "HT_MODELS/bcm_bistable.json", 7 )
 
     plt.tight_layout()
     plt.show()

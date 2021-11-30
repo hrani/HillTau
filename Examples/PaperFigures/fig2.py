@@ -77,12 +77,10 @@ def runSim( chem, ht, plotPos ):
     moose.start( t2 - t1 )
     stim.concInit = 0
     moose.start( t3 - t2 )
-    ivec = iplot.vector
     ovec = oplot.vector
-    x = np.array( range( len( ivec )) ) * plotDt
+    x = np.array( range( len( ovec )) ) * plotDt
     ax = plotBoilerplate( "C", plotPos, "This is mass-action", xlabel = "Time (s)" )
-    ax.plot( x , 1000 * ivec, label = "input" )
-    ax.plot( x , 1000 * ovec, label = "output" )
+    ax.plot( x , 1000 * ovec, label = "Mass-action" )
     moose.delete( '/model' )
 
     jsonDict = hillTau.loadHillTau( ht )
@@ -100,9 +98,13 @@ def runSim( chem, ht, plotPos ):
     plotvec = np.transpose( np.array( model.plotvec ) )
     x = np.array( range( plotvec.shape[1] ) ) * plotDt
     reacn = "this is ht"
-    ax = plotBoilerplate( "D", plotPos+1, reacn, xlabel = "Time (s)" )
+    htvec = np.array( plotvec[outputMolIndex] )
+    #ax = plotBoilerplate( "D", plotPos+1, reacn, xlabel = "Time (s)" )
+    ax.plot( x , 1000 * htvec, label = "HillTau" )
     ax.plot( x , 1000 * plotvec[inputMolIndex], label = "input" )
-    ax.plot( x , 1000 * plotvec[outputMolIndex], label = "output" )
+    dy = htvec - ovec
+    print( "Panel C normalized rms diff =", np.sqrt( np.mean( dy * dy )) / np.max( htvec ))
+
 
 def runOsc( chem, ht, plotPos ):
     runtime = 6000
@@ -117,8 +119,8 @@ def runOsc( chem, ht, plotPos ):
     moose.start( runtime )
     ovec = oplot.vector
     x = np.array( range( len( ovec )) ) * plotDt
-    ax = plotBoilerplate( "F", plotPos, "This is mass-action", xlabel = "Time (s)" )
-    ax.plot( x , 1000 * ovec, label = "output" )
+    ax = plotBoilerplate( "D", plotPos, "This is mass-action", xlabel = "Time (s)" )
+    ax.plot( x , 1000 * ovec, label = "Mass action" )
     ax.set_ylim( 0, 0.4 )
     moose.delete( '/model' )
 
@@ -126,22 +128,26 @@ def runOsc( chem, ht, plotPos ):
     hillTau.scaleDict( jsonDict, hillTau.getQuantityScale( jsonDict ) )
     model = hillTau.parseModel( jsonDict )
     model.dt = plotDt
+    model.reinit()
     outputMolIndex = model.molInfo.get( "output" ).index
 
     model.advance( runtime )
     plotvec = np.transpose( np.array( model.plotvec ) )
     x = np.array( range( plotvec.shape[1] ) ) * plotDt
     reacn = "this is ht"
-    ax = plotBoilerplate( "H", plotPos+4, reacn, xlabel = "Time (s)" )
-    ax.set_ylim( 0, 0.4 )
-    ax.plot( x , 1000 * plotvec[outputMolIndex], label = "output" )
+    #ax = plotBoilerplate( "H", plotPos+4, reacn, xlabel = "Time (s)" )
+    #ax.set_ylim( 0, 0.4 )
+    htvec = np.array( plotvec[outputMolIndex] )
+    ax.plot( x , 1000 * htvec, label = "HillTau" )
+    dy = htvec - ovec
+    print( "Panel D normalized rms diff =", np.sqrt( np.mean( dy * dy )) / np.max( htvec ))
 
 def doseResp( model, xIndex, yIndex ):
     model.dt = plotDt
     t = 0
     x = []
     y = []
-    for dose in np.exp( np.arange( -7.0, 10.0, 0.2 ) ):
+    for dose in np.exp( np.arange( -7.5, 10.0, 0.2 ) ):
         model.conc[ xIndex ] = dose
         model.advance( 1000, settle = True )
         resp = model.conc[ yIndex ]
@@ -158,11 +164,11 @@ def adv( model, inputMolIndex, t, dt, val ):
 
 def runBis( ht, plotPos ):
     reacn = "fb vs output"
-    ax = plotBoilerplate( "I", plotPos, reacn, xlabel = "fb (mM)", ylabel = "output (mM)" )
+    ax = plotBoilerplate( "H", plotPos, reacn, xlabel = "fb (mM)", ylabel = "output (mM)" )
     ax.set_yscale( "log" )
     ax.set_xscale( "log" )
-    ax.set_xlim( 0.001, 10 )
-    ax.set_ylim( 0.01, 2 )
+    ax.set_xlim( 0.0005, 10 )
+    ax.set_ylim( 0.001, 5 )
 
     jsonDict = hillTau.loadHillTau( ht )
     reacs = jsonDict["Groups"]["output_g"]["Reacs"]
@@ -172,7 +178,7 @@ def runBis( ht, plotPos ):
     outputMolIndex = model.molInfo.get( "output" ).index
     fbMolIndex = model.molInfo.get( "fb" ).index
     x, y = doseResp( model, outputMolIndex, fbMolIndex )
-    ax.plot( y , x, label = "fb_vs_output" )
+    ax.plot( y , x, label = "fb_vs_output", color="C6" )
 
     jsonDict = hillTau.loadHillTau( ht )
     reacs = jsonDict["Groups"]["output_g"]["Reacs"]
@@ -182,40 +188,41 @@ def runBis( ht, plotPos ):
     outputMolIndex = model.molInfo.get( "output" ).index
     fbMolIndex = model.molInfo.get( "fb" ).index
     x, y = doseResp( model, fbMolIndex, outputMolIndex )
-    ax.plot( x , y, label = "output_vs_fb" )
+    ax.plot( x , y, label = "output_vs_fb", color="C5" )
 
     jsonDict = hillTau.loadHillTau( ht )
     hillTau.scaleDict( jsonDict, hillTau.getQuantityScale( jsonDict ) )
     model = hillTau.parseModel( jsonDict )
     model.dt = 0.1
     fbMolIndex = model.molInfo.get( "fb" ).index
+    stimMolIndex = model.molInfo.get( "stim" ).index
     outputMolIndex = model.molInfo.get( "output" ).index
-    baseline = model.concInit[fbMolIndex]
+    baseline = model.concInit[stimMolIndex]
     moose.reinit()
     t = 0
-    t = adv( model, fbMolIndex, t, 20, baseline )
-    t = adv( model, fbMolIndex, t, 1, baseline * 10 )
-    t = adv( model, fbMolIndex, t, 19, baseline )
-    t = adv( model, fbMolIndex, t, 1, baseline * 50 )
-    t = adv( model, fbMolIndex, t, 19, baseline )
-    t = adv( model, fbMolIndex, t, 0.1, baseline * 0.01 )
-    t = adv( model, fbMolIndex, t, 19, baseline )
-    for i in range( 20 ):
-        t = adv( model, fbMolIndex, t, 0.1, baseline * 0.01 )
-    t = adv( model, fbMolIndex, t, 18, baseline )
+    t = adv( model, stimMolIndex, t, 20, baseline )
+    t = adv( model, stimMolIndex, t, 1, baseline * 100 )
+    t = adv( model, stimMolIndex, t, 19, baseline )
+    t = adv( model, stimMolIndex, t, 5, baseline * 100 )
+    t = adv( model, stimMolIndex, t, 15, baseline )
+    t = adv( model, stimMolIndex, t, 1, baseline * 0.01 )
+    t = adv( model, stimMolIndex, t, 19, baseline )
+    t = adv( model, stimMolIndex, t, 5, baseline * 0.01 )
+    t = adv( model, stimMolIndex, t, 15, baseline )
     plotvec = np.transpose( np.array( model.plotvec ) )
     x = np.array( range( plotvec.shape[1] ) ) * model.dt
     reacn = "State switching"
-    ax = plotBoilerplate( "J", plotPos+1, reacn, xlabel = "Time (s)", ylabel = "output (mM)")
-    ax.plot( x , plotvec[fbMolIndex], label = "stimulus" )
-    ax.plot( x , plotvec[outputMolIndex], label = "output" )
+    ax = plotBoilerplate( "I", plotPos+1, reacn, xlabel = "Time (s)", ylabel = "output (mM)")
+    ax.set_yscale( "log" )
+    ax.set_ylim( 0.001, 5 )
+    ax.plot( x , plotvec[fbMolIndex], label = "stimulus", color="C6" )
+    ax.plot( x , plotvec[outputMolIndex], label = "output", color="C5" )
 
 def main():
-    fig = plt.figure( figsize = (6,10), facecolor='white' )
+    fig = plt.figure( figsize = (6,12), facecolor='white' )
     fig.subplots_adjust( left = 0.18 )
-    #runSim( "exc.json", "C", u"input + mol \u21cc output", 4 )
-    runSim( "KKIT_MODELS/fb_inhib.g", "HT_MODELS/fb_inhib.json", 1 )
-    runOsc( "KKIT_MODELS/kholodenko.g", "HT_MODELS/osc.json", 4 )
+    runSim( "KKIT_MODELS/fb_inhib.g", "HT_MODELS/fb_inhib.json", 3 )
+    runOsc( "KKIT_MODELS/kholodenko.g", "HT_MODELS/kholodenko.json", 4 )
     runBis( "HT_MODELS/bistable.json", 9 )
 
     plt.tight_layout()

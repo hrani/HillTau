@@ -60,10 +60,15 @@ def regress( ax, ay, xmin, name ):
     return( ax, [ intcpt + slope * i for i in ax ] )
 
 def makePlots():
-    massActionParams = [3,3,16,37,20,361,748]
-    HillTauParams = [3,3,5,7,13,29,35]
-    massActionRuntime = [ 1.63,1.63,4.02,5.03,64.2,1600,24350 ]
-    HillTauRuntime = [ 3.34,3.31,6.15,8.5,9.02,21,35.2 ]
+    massActionParams = [3,3,16,20,37,361,748]
+    HillTauParams =    [3,3,5,  13,12, 31, 35]
+    HillTauParams2 =    [3,3,5,  12,13, 31, 35]
+
+    MooseRuntime = [ 1.59,1.52,3.9, 60.0, 4.9,  1520, 32000 ]
+
+    CopasiRuntime = [ 17.9,17.3,21.0, 24.4, 26.5,   295, 4480 ]
+    HillTauRuntime = [ 0.053,0.053,0.081,0.195, 0.208, 0.277, 0.68 ]
+    HillTauRuntime2 = [ 0.053,0.053,0.081, 0.207, 0.195, 0.277,0.68 ]
     ax = plotBoilerplate( "A", 1, xlabel = "# Mass-action parameters", ylabel = "# HillTau params" )
     ax.set_xscale( "log" )
     ax.set_xlim( (1, 1000 ) )
@@ -76,9 +81,10 @@ def makePlots():
     ax.set_xscale( "log" )
     ax.set_yscale( "log" )
     ax.set_xlim( (1, 1000 ) )
-    ax.plot( massActionParams , massActionRuntime, "o", label = "mass action" )
-    ax.plot( massActionParams , HillTauRuntime, "o", label = "HillTau" )
-    ax.legend( loc = 'upper left', frameon = True )
+    ax.plot( massActionParams , MooseRuntime, "-o", label = "MOOSE" )
+    ax.plot( massActionParams , CopasiRuntime, ":o", label = "COPASI" )
+    ax.plot( massActionParams , HillTauRuntime, "--o", label = "HillTau" )
+    ax.legend( loc = 'upper left', frameon = False )
     '''
     x, y = regress( massActionParams, massActionRuntime, 3, "B MA" )
     ax.plot( x, y, "b-" )
@@ -87,10 +93,10 @@ def makePlots():
     '''
 
     ax = plotBoilerplate( "C", 3, xlabel = "# HillTau parameters", ylabel = "Runtime ($\mu$s/s)" )
-    ax.plot( HillTauParams , HillTauRuntime, "o", label = "ma" )
-    x, y = regress( HillTauParams, HillTauRuntime, 0, "C" )
+    ax.plot( HillTauParams2 , HillTauRuntime2, "o", label = "ma" )
+    x, y = regress( HillTauParams2, HillTauRuntime2, 0, "C" )
     ax.set_xlim( (0, 40 ) )
-    ax.set_ylim( (0, 40 ) )
+    ax.set_ylim( (0, 0.7 ) )
     ax.plot( x, y, "b-" )
 
 

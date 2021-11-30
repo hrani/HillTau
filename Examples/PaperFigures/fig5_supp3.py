@@ -66,7 +66,7 @@ def ts( chem, ht, ampl, plotPos, title = '', is_LTP = False ):
     Ca_rest = 0.08e-3
     BDNF_rest = 0.05e-6
     BDNF_ampl = 3.7e-6
-    modelId = moose.loadModel( chem, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( chem, 'model', 'gsl' )
     Ca = moose.element( '/model/kinetics/Ca' )
     BDNF = moose.element( '/model/kinetics/BDNF' )
     output = moose.element( '/model/kinetics/CaMKIII_CaM_Ca4' )
@@ -94,7 +94,7 @@ def ts( chem, ht, ampl, plotPos, title = '', is_LTP = False ):
             moose.start( 4 )
             BDNF.concInit = BDNF_rest
             moose.start( tInter )
-        moose.start( tpost - tInter )
+        moose.start( tpost )
     else:
         tstim = 900
         Ca.concInit = ampl
@@ -146,11 +146,14 @@ def ts( chem, ht, ampl, plotPos, title = '', is_LTP = False ):
     #ax = plotBoilerplate( "B", plotPos+1, reacn, xlabel = "Time (s)" )
     #ax.plot( x , 1000 * plotvec[inputMolIndex], label = "input" )
     ax.plot( x , 1e3 * plotvec[outputMolIndex][int(tsettle/plotDt):], label = "output" )
+    htvec = np.array( plotvec[outputMolIndex][int(tsettle/plotDt):] )
     if is_LTP:
         ax.set_ylim( 0.0, 0.035 )
     else:
         ax.set_ylim( 0.0, 0.07 )
     print( "timeseries runtimes: t Moose = {:.2f};    t HillTau = {:.4f}: ".format( tmoose, tht) )
+    dy = htvec - ovec
+    print( char[plotPos], ": timeseries normalized rms diff =", np.sqrt( np.mean( dy * dy )) / np.max( (htvec + ovec )/2.0 ))
 
 
 def doseResp( model, xIndex, yIndex, doseList ):
@@ -197,13 +200,14 @@ def adv( model, inputMolIndex, t, dt, val ):
 def runDoser( kkit, ht, plotPos, doseList, var = "Ca", title = "", BDNF = -1 ):
     ax = plotBoilerplate( char[plotPos], plotPos, title, xlabel = "[{}] ($\mu$M)".format( var ), ylabel = "aCaMKIII ($\mu$M)" )
     ax.set_xscale( "log" )
-    modelId = moose.loadModel( kkit, 'model', 'gsl' )[0]
+    modelId = moose.loadModel( kkit, 'model', 'gsl' )
     tmoose = time.time()
     if BDNF > 0.0:
         moose.element( '/model/kinetics/BDNF' ).concInit = BDNF * 1e-3
     x, y = doseRespMoose( var, doseList )
     tmoose = time.time() - tmoose
     ax.plot( x , y, label = "aCaMKIII_vs_Ca_moose" )
+    mvec = np.array( y )
 
 
     jsonDict = hillTau.loadHillTau( ht )
@@ -220,6 +224,9 @@ def runDoser( kkit, ht, plotPos, doseList, var = "Ca", title = "", BDNF = -1 ):
     ax.plot( x , y, label = "aCaMKIII_vs_" + var )
     ax.set_ylim( 0.0, 0.08 )
     print( "dose_resp runtimes: t Moose = {:.2f};    t HillTau = {:.4f}: ".format( tmoose, tht) )
+    htvec = np.array( y )
+    dy = htvec - mvec
+    print( char[plotPos], ": Dose_resp normalized rms diff =", np.sqrt( np.mean( dy * dy )) / np.max( htvec ))
 
 def main():
     fig = plt.figure( figsize = (6,10), facecolor='white' )

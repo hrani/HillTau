@@ -18,7 +18,7 @@
 '''
 *******************************************************************
  * File:            fig6.py
- * Description:     Runs a series of models in MOOSE and HillTau to 
+ * Description:     Runs a series of models in MOOSE, COPASI and HillTau to 
  *                  compare their runtimes.
  * Author:          Upinder S. Bhalla
  * E-mail:          bhalla@ncbs.res.in
@@ -35,17 +35,31 @@ import matplotlib.pyplot as plt
 import time
 import moose
 import hillTau
+import shutil
+import pycotools3
 
 t1 = 20
 t2 = 60
 t3 = 100
 i1 = 1e-3
+htReps = 100
 
-plotDt = 1
+plotDt = 1.0
 
-def runSim( chem, ht, runtime ):
+modelList = [
+    ["exc.g", "exc.json", "exc.xml", 1e5],
+    ["conv.g", "conv.json", "conv.xml", 1e5],
+    ["fb_inhib.g", "fb_inhib.json", "fb_inhib.xml", 1e5],
+    ["kholodenko.g", "kholodenko.json", "kholodenko.xml", 1e5],
+    ["bcm.g", "bcm.json", "bcm.xml", 1e5],
+    ["acc92_fixed.g", "syn_prot_composite.json", "acc92_fixed.xml", 1e4],
+    ["autsim_v2_17Jul2020.g", "aut6.json", "autsim_v1_17Jul2020.xml", 1e3],
+]
+
+def runSim( chem, ht, cps, runtime ):
+    print( "-------------------------------------> RUNNING: ", chem )
     modelId = moose.loadModel( "KKIT_MODELS/" + chem, 'model', 'gsl' )
-    for i in range( 10, 20 ):
+    for i in range( 0, 20 ):
         moose.setClock( i, plotDt )
 
     moose.reinit()
@@ -58,28 +72,47 @@ def runSim( chem, ht, runtime ):
     hillTau.scaleDict( jsonDict, hillTau.getQuantityScale( jsonDict ) )
     model = hillTau.parseModel( jsonDict )
     model.dt = plotDt
-    model.reinit()
-    htTime = time.time()
-    model.advance( runtime )
-    htTime = time.time() - htTime
+    htTime = 0.0
+    for i in range( htReps ):
+        model.reinit()
+        t0 = time.time()
+        model.advance( runtime )
+        htTime += time.time() - t0
 
-    # Now run it again, but in steady-state model for HillTau
-    model.reinit()
-    htTime2 = time.time()
-    model.advance( runtime, settle = True )
-    htTime2 = time.time() - htTime2
-    print( "{:12s}  {:8.3f}  {:8.3f}  {:8.5f}   {:8.1f}".format( ht, mooseTime, htTime, htTime2, runtime ))
-    #return [mooseTime, htTime, htTime2 ]
+    # Now run it again, but in steady-state mode for HillTau
+    htTime2 = 0.0
+    for i in range( htReps ):
+        model.reinit()
+        t0 = time.time()
+        model.advance( runtime, settle = True )
+        htTime2 += time.time() - t0
+
+    # Now do the COPASI thing.
+    shutil.copy( "SBML_MODELS/" + cps, "temp.sbml" )
+
+    # It croaks if you just give the file name. Have to use ./temp.sbml
+    smodel = pycotools3.model.ImportSBML( "./temp.sbml" )
+    m = smodel.load_model()
+    #TC = pycotools3.tasks.TimeCourse( m, end = runtime, step_size = plotDt, run = True, save = False )
+    TC = pycotools3.tasks.TimeCourse( m, end = runtime, step_size = plotDt, run = False, save = False )
+    TC.run = True
+    TC.set_timecourse()
+    TC.set_report()
+    t0 = time.time()
+    TC.simulate()
+    ctime = time.time() - t0
+
+    return [chem, mooseTime, htTime, htTime2, ctime, runtime ]
 
 def main():
-    kkitList = ["exc.g", "conv.g", "fb_inhib.g", "kholodenko.g", "bcm.g", "acc92_fixed.g", "autsim_v1_17Jul2020.g" ]
-    htList = ["exc.json", "conv.json", "fb_inhib.json", "osc.json", "bcm.json", "syn_prot2.json", "aut6.json" ]
-    runtime = [ 1e6, 1e6, 1e6, 1e6, 1e5, 1e4, 1e3]
-    results = []
-    print("Model            MOOSE       HT_time    HT_steady_state  simtime" )
-    for k, h, t in zip( kkitList, htList, runtime ):
-        runSim( k, h, t )
-        #results.append( runSim( k, j, t ) )
+    ret = []
+    for k, h, c, t in modelList:
+        ret.append( runSim( k, h, c, t ) )
+
+    #print("Model            MOOSE       HT_time    HT_steady_state  COPASI  simtime" )
+    print( "{:18s}{:>12s}{:>12s}{:>12s}{:>12s}{:>12s}".format( "Model","MOOSE","HT_time", "HT_ss", "COPASI",  "simtime" ) )
+    for model, mooseTime, htTime, htTime2, ctime, runtime  in ret:
+        print( "{:18s}{:12.3f}{:12.3g}{:12.3g}{:12.3f}{:12.2g}".format( model, mooseTime, htTime/htReps, htTime2/htReps, ctime, runtime ))
 
 if __name__ == '__main__':
     main()
