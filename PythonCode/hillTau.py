@@ -268,7 +268,7 @@ class Model():
             # HillTau does this anyway, we jump fast. Only issue arises
             # if there are feedback processes. So to be conservative, 
             # do 10 steps. 
-            innerAdvance( runtime, runtime / 10.0 )
+            self.innerAdvance( runtime, runtime / 10.0 )
         else:
             newdt = min( self.dt, self.internalDt )
             adv = max( self.minTau * 10.0, self.dt )
