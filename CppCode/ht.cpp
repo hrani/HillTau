@@ -63,6 +63,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	prdIndex( 0 ),
 	kh( 1.0 ),
 	HillCoeff( 1.0 ),
+	isBuffered( 0 ),
 	overrideConcInit( false ),
 	subs( subs_ ),
 	hillIndex( 0 ),
@@ -130,6 +131,10 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	if ( g != reacObj.end() ) {
 		gain = g->second;
 	}
+	auto ib = reacObj.find( "isBuffered" );
+	if ( ib != reacObj.end() ) {
+		isBuffered = ib->second;
+	}
 }
 
 void ReacInfo::setKA( double val ) {
@@ -143,6 +148,9 @@ double ReacInfo::getKA() const {
 
 double ReacInfo::eval( Model* model, double dt ) const
 {
+	if ( isBuffered ) {
+		return model->conc[ prdIndex ];
+	}
 	double orig = model->conc[ prdIndex ] - baseline;
 	double delta = concInf( model->conc ) - orig;
 	if ( delta >= 0.0 ) {

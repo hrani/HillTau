@@ -42,6 +42,7 @@ class ReacInfo
 			int prdIndex;
 			double kh;
 			double HillCoeff;
+			int isBuffered;
 			bool overrideConcInit;
 			vector< string > subs;
 

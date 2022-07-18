@@ -43,6 +43,7 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("prdIndex", &ReacInfo::prdIndex)
 		.def_readwrite("kh", &ReacInfo::kh)
 		.def_readonly("HillCoeff", &ReacInfo::HillCoeff)
+		.def_readwrite("isBuffered", &ReacInfo::isBuffered)
 		.def_readonly("subs", &ReacInfo::subs)
 		.def( "eval", &ReacInfo::eval, "Evaluator for Reacs" )
 		.def( "getReacOrder", &ReacInfo::getReacOrder, "Returns 1+largest of substrate mol orders, and updates ReacMol accordingly.", py::arg("model") )

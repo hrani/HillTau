@@ -104,6 +104,7 @@ class ReacInfo():
             raise( ValueError( "Error: Reaction {} has zero reagents.".format( name ) ) )
         self.hillIndex = molInfo[ self.subs[-1] ].index
         self.reagIndex = molInfo[ self.subs[0] ].index
+        self.isBuffered = 0 # Turns off evaluation when true.
         self.Kmod = 1.0 # This is the default halfmax of the modifier
         self.Amod = 4.0 # This is the default alpha factor for modifier. 
         # Values of Amod < 1 make it an inhibitory modifier. 
@@ -148,6 +149,9 @@ class ReacInfo():
         gain = reacObj.get( "gain" )
         if gain:
             self.gain = convConst( consts, gain )
+        isBuffered = reacObj.get( "isBuffered" )
+        if isBuffered and isBuffered != 0:
+            self.isBuffered = 1
 
         #print( "Reac {}: hillIndex={}, hillCoeff = {}, kh = {}, reagIndex  {}".format( self.name, self.hillIndex, self.HillCoeff, self.kh, self.reagIndex ) )
 
@@ -173,6 +177,8 @@ class ReacInfo():
         return 1.0 - np.exp( -t/self.tau2 )
 
     def eval( self, model, dt ):
+        if self.isBuffered:
+            return model.conc[self.prdIndex]
         orig = model.conc[self.prdIndex] - self.baseline
         delta = self.concInf( model.conc ) - orig
         if delta >= 0:
