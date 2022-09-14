@@ -74,7 +74,7 @@ class Stim():
 
 
 class MolInfo():
-    def __init__( self, name, grp, concInit = -1.0 ) :
+    def __init__( self, name, grp, concInit = -1.0, isSub = 0 ) :
         self.name = name
         self.grp = grp
         if concInit < 0.0:
@@ -83,6 +83,7 @@ class MolInfo():
         else:
             self.concInit = concInit
             self.explicitConcInit = True
+        self.isSub = isSub
         self.order = 0  # Start out all zero
                         # First pass: 0 Reac or Eqn set to -1
                         # Second pass: cumulative order depending on subs
@@ -266,6 +267,22 @@ class Model():
         idx = self.molInfo[ molName ].index
         self.conc[idx] = val
     '''
+    def makeMol( self, name, grp, concInit = -1.0, isSub = 0 ):
+        old = self.molInfo.get( name )
+        if old:
+            if not isSub:
+                if old.isSub:
+                    old.grp = grp
+                    old.isSub = 0
+                elif old.grp != grp:  # BAD: same obj in new grp
+                    raise( ValueError( "Error: Molecule '{}' redefined in new grp '{}', already in '{}'".format( name, grp, old.grp ) ) )
+            if concInit >= 0.0:
+                old.concInit = concInit
+                old.explicitConcInit = True
+        else:
+            self.molInfo[name] = MolInfo( name, grp, concInit, isSub )
+
+
     def advance( self, runtime, settle = False ):
         if runtime < 10.0e-6:
             return
@@ -507,24 +524,31 @@ def parseModel( jsonDict ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 for subname in reac["subs"]:
-                    model.molInfo[subname] = MolInfo( subname, grpname)
-
-    for grpname, grp in model.jsonDict['Groups'].items():
+                    model.makeMol( subname, grpname, isSub = 1)
+                    #model.molInfo[subname] = MolInfo( subname, grpname, isSub = 1)
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
                 subs, cs = extractSubs( expr, model.consts )
                 for subname in subs:
-                    model.molInfo[subname] = MolInfo( subname, grpname)
-                model.molInfo[lhs] = MolInfo( lhs, grpname)
+                    model.makeMol( subname, grpname, isSub = 1)
+                    #model.molInfo[subname] = MolInfo( subname, grpname, isSub = 1)
+
+    for grpname, grp in model.jsonDict['Groups'].items():
+        if "Eqns" in grp:
+            for lhs, expr in grp["Eqns"].items():
+                model.makeMol( lhs, grpname )
+                #model.molInfo[lhs] = MolInfo( lhs, grpname)
                 model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr, subs, cs )
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
-                model.molInfo[reacname] = MolInfo( reacname, grpname)
+                model.makeMol( reacname, grpname )
+                #model.molInfo[reacname] = MolInfo( reacname, grpname)
 
     for grpname, grp in model.jsonDict['Groups'].items():
         if "Species" in grp:
             for molname, conc in grp['Species'].items():
-                model.molInfo[molname] = MolInfo( molname, grpname, concInit = convConst( model.consts, conc ) )
+                model.makeMol( molname, grpname, concInit = convConst( model.consts, conc ) )
+                # model.molInfo[molname] = MolInfo( molname, grpname, concInit = convConst( model.consts, conc ) )
                 grp['Species'][molname] = convConst( model.consts, conc )
 
     # Then assign indices to these unique molnames, and build up the
