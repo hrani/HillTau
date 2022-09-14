@@ -25,11 +25,12 @@ PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
 const double INTERNAL_DT_SCALE = 0.02;
 
-MolInfo::MolInfo( const std::string& name_, const std::string& grp_, double concInit_ = -1.0 ):
+MolInfo::MolInfo( const std::string& name_, const std::string& grp_, double concInit_ = -1.0, int isSub_ = 0 ):
 	name(name_),
 	grp( grp_ ),
 	order( 0 ),
-	index( 0 )
+	index( 0 ),
+	isSub( isSub_ )
 {
 		if ( concInit_ < 0.0 ) {
 			concInit = 0.0;
@@ -74,7 +75,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	tau2 = tau;
 	prdIndex = molInfo.at(name)->index;
 	if ( subs.size() == 0 ) {
-		throw "Error: Reaction " + name + " has zero reagents\n";
+		throw std::range_error( "Error: Reaction " + name + " has zero reagents\n" );
 	}
 	reagIndex = molInfo.at( subs[0] )->index;
 	hillIndex = molInfo.at( subs.back() )->index;
@@ -113,7 +114,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 			Kmod = i->second;
 		}
 	} else if ( numUnique == 3)  {
-		throw "Error: Reaction " + name + " has 3 reagents but no Kmod specified for modifier.\n";
+		throw std::range_error( "Error: Reaction " + name + " has 3 reagents but no Kmod specified for modifier.\n");
 	}
 	auto a = reacObj.find( "Amod" );
 	if ( a != reacObj.end() ) {
@@ -160,7 +161,7 @@ double ReacInfo::eval( Model* model, double dt ) const
 	}
 	double ret = baseline + orig + delta;
 	if (ret < 0.0 ) {
-		throw "Error: negative value on: " + name;
+		throw std::range_error( "Error: negative value on: " + name );
 	}
 	model->conc[ prdIndex ] = ret;
 	return ret;
@@ -258,7 +259,7 @@ EqnInfo::EqnInfo( const string& name_, const string& grp_,
 		if ( mi != molInfo.end() ) {
 			symbol_table.add_variable( s, conc[ mi->second->index ] );
 		} else {
-			throw( "Error: Unable to find variable '" + s + "' in equation " + eqnStr );
+			throw std::invalid_argument( "Error: Unable to find variable '" + s + "' in equation " + eqnStr );
 		}
 	}
 	/**
@@ -297,7 +298,7 @@ Model::Model()
 void Model::setReacSeqDepth( int maxDepth )
 {
 	if ( maxDepth < 1 )
-		throw( "Error: maxDepth must be >= 1" );
+		throw std::range_error( "Error: maxDepth must be >= 1" );
 	sortedReacInfo.clear();
 	sortedReacInfo.resize( maxDepth );
 	sortedEqnInfo.clear();
@@ -507,17 +508,27 @@ void Model::makeReac( const string & name, const string & grp,
 	molInfo[name]->grp = grp;
 }
 
-void Model::makeMol( const string & name, const string & grp, double concInit = -1.0 )
+void Model::makeMol( const string & name, const string & grp, double concInit = -1.0, int isSub = 0 )
 {
 	auto mi = molInfo.find( name );
 	if ( mi == molInfo.end() ) { // Make new one.
-		auto m = new MolInfo( name, grp, concInit );
+		auto m = new MolInfo( name, grp, concInit, isSub );
 		m->index = molInfo.size();
 		molInfo[ name ] = m;
-	} else if ( concInit >= 0.0 ) {
-		// Could be the second pass assignment of species with concInits.
-		mi->second->concInit = concInit;
-		mi->second->explicitConcInit = true;
+	} else {
+		if ( !isSub ) {
+			if ( mi->second->isSub ) { // OK, override grp assignment of sub
+				mi->second->grp = grp;
+				mi->second->isSub = 0;
+			} else if ( mi->second->grp != grp ){ //BAD: same obj in new grp
+				throw std::invalid_argument( "Error: Molecule '" + name + "' redefined in new grp '" + grp + "', already in '" + mi->second->grp + "'.\n" );
+			}
+		}
+		if ( concInit >= 0.0 ) {
+			// Could be second pass assignment of species with concInits.
+			mi->second->concInit = concInit;
+			mi->second->explicitConcInit = true;
+		}
 	}
 }
 

@@ -28,9 +28,20 @@ ht2sbml: Utility program to convert HillTau (JSON format) model to a near-
 htgraph: Utility program to generate png or svg graphs to display reaction 
 structure of HillTau model.
 
+### HillTau
+
 [Documentation for HillTau](Documentation.md)
 
-[Preprint for HillTau](https://www.biorxiv.org/content/10.1101/2020.09.20.305250v1), which discusses many aspects of its design and use.
+
+The following paper discusses design and examples in detail:
+
+HillTau: A fast, compact abstraction for model reduction in biochemical
+signaling networks.<br>
+**Bhalla US.**<br>
+*PLoS Comput Biol.* 2021
+
+[DOI](10.1371/journal.pcbi.1009621)
+
 
 ## Installation
 

@@ -196,21 +196,19 @@ def parseModel( jsonDict ):
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 for subname in reac["subs"]:
-                    model.makeMol( subname, grpname )
+                    model.makeMol( subname, grpname, isSub = 1 )
                     #mi[subname] = ht.MolInfo( subname, grpname, order=0)
-
-    for grpname, grp in jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
                 subs, cs = extractSubs( expr, consts )
                 eqnSubs[ lhs ] = [ subs, cs ]
                 for subname in subs:
-                    model.makeMol( subname, grpname )
+                    model.makeMol( subname, grpname, isSub = 1 )
 
-                #model.makeEqn( lhs, grpname, expr )
-                #ei[lhs] = ht.EqnInfo( lhs, grpname, expr )
+    for grpname, grp in jsonDict['Groups'].items():
+        if "Eqns" in grp:
+            for lhs, expr in grp["Eqns"].items():
                 model.makeMol( lhs, grpname )
-                #mi[lhs] = ht.MolInfo( lhs, grpname, order=-1)
         if "Reacs" in grp:
             for reacname, reac in grp['Reacs'].items():
                 model.makeMol( reacname, grpname )
