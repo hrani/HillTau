@@ -21,6 +21,8 @@
  * Description:     Converts HT models to SBML and compares outputs.
  * Author:          Upinder S. Bhalla
  * E-mail:          bhalla@ncbs.res.in
+ * Warning:        This example depends on pycotools which works for python3.6 using 
+  		     Python 3.7 or 3.8 will not work at this time due to dependency issues of pycotools for the latest version of python
  ********************************************************************/
 '''
 from __future__ import print_function
@@ -32,8 +34,8 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-sys.path.insert(1, '/home/bhalla/homework/HILLTAU/REPO/HillTau/PythonCode')
-sys.path.insert(1, '/home/bhalla/homework/HILLTAU/REPO/HillTau/HT2SBML')
+#sys.path.insert(1, '/home/bhalla/homework/HILLTAU/REPO/HillTau/PythonCode')
+sys.path.insert(1, os.path.join(sys.path[0], '../../'))
 import hillTau
 import ht2sbml
 import shutil
@@ -65,7 +67,7 @@ def runHT( ht, stimMol, outputMol, events ):
         currTime = e[0]
     htTime += time.time() - t0
     outIndex = model.molInfo.get( outputMol ).index
-    return model.getConcVec( outIndex ) * 1e3
+    return np.array(model.getConcVec( outIndex )) * 1e3
 
 def runCOP( ht, stimMol, outputMol, events ):
     # Generate the COPASI model

@@ -37,9 +37,9 @@ import moose
 
 def conv( fname ):
     kfile = "./KKIT_MODELS/" + fname + ".g"
-    modelId = moose.loadModel( "./KKIT_MODELS/" + fname + ".g", 'model', 'none' )[0]
+    modelId = moose.loadModel( "./KKIT_MODELS/" + fname + ".g", 'model', 'none' )
     sfile = "./SBML_MODELS/" + fname + ".xml"
-    moose.mooseWriteSBML( '/model', sfile )
+    moose.writeSBML( '/model', sfile )
     moose.delete( modelId )
 
 
