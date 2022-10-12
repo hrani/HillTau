@@ -31,6 +31,10 @@
 **********************************************************************/
 '''
 '''
+2022
+Sep
+box type just for sub is changed
+fix to arrow color to co-ordinate the parent
 2021
 Mar 31 
 sub->prd is connected with double arrow,
@@ -185,7 +189,7 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 			displayGroups = modelpath.grpInfo
 		
 	
-	specieslist,node_color = writeSpecies(modelpath,groupmap)
+	specielist,node_color = writeSpecies(modelpath,groupmap)
 	funclist = writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, displayGroups, fontsize = fontsize - 2)
 	edgelist,node_color,lig_exist,kmod_exist,inhibit_exist = writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups,fontsize = fontsize - 2)
 	nIndex = len(matplotcolors)-1
@@ -195,8 +199,7 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 			if grp in displayGroups:
 				color,nIndex = getColor(nIndex,"reverse")
 				s = s + "\nsubgraph cluster_"+str(group_no)+"i\n{"
-				s = s+"\nsubgraph cluster_"+str(group_no)+"\n{"+"\n"+"label=\""+grp+"\";\npenwidth=4; margin=10.0\ncolor=\""+color+"\";\nfontsize="+str(fontsize + 2)+";\n"			
-				#print(s)
+				s = s+"\nsubgraph cluster_"+str(group_no)+"\n{"+"\n"+"label=\""+grp+"\";\npenwidth=4; margin=10.0\ncolor=\""+color+"\";\nfontsize="+str(fontsize + 2)+";\n"
 				sps = ""
 				items = list(unique(items))
 				for sp in items:
@@ -217,10 +220,7 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 				if l in node_color:
 					v = node_color[l]
 					v,nodeIndex = getColor(nodeIndex)
-					if k in specieslist:
-						concValue = [x['value'] for x in specieslist[k] if x['name'] == l][0]
-					f_graph.write("\n"+l+"[color=\""+v+"\",tooltip = \"concInit = "+str(float("{:.5f}".format(concValue)))+
-						"\"]")
+					f_graph.write("\n"+l+"[color=\""+v+"\"]")
 		
 	for p,q in startstringdigit.items():
 		if p in displayGroups:
@@ -259,7 +259,7 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 
 def writeSpecies(modelpath, groupmap):
 	# getting all the species
-	specieslist = {}
+	specieslist = ""
 	mIndex = 0 
 	for molname, mol in ( modelpath.molInfo.items() ):
 		checkdigit(startstringdigit,mol.grp,molname)
@@ -270,10 +270,8 @@ def writeSpecies(modelpath, groupmap):
 
 		if mol.grp in groupmap:
 			groupmap[mol.grp].append(molname)
-			specieslist[mol.grp].append({"name":mol.name,"value":mol.concInit})
 		else:
 			groupmap[mol.grp] = [molname]
-			specieslist[mol.grp] = [{"name":mol.name,"value":mol.concInit}]
 	return specieslist,node_color
 		
 def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups, fontsize = 16):
