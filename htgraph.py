@@ -100,7 +100,9 @@ matplotcolors = []
 for name,hexno in matplotlib.colors.cnames.items():
 	matplotcolors.append(name)
 
-
+# matplotcolors = ['#377eb8', '#ff7f00', '#4daf4a',
+#                   '#f781bf', '#a65628', '#984ea3',
+#                   '#999999', '#e41a1c', '#dede00']
 def countX(lst, x):
 	return lst.count(x)
 
@@ -129,30 +131,26 @@ def checkdigitEqu(startstringdigit,grp,sp):
 	return(sp)
 
 def getColor(gIndex,fwd_rev="forward"):
+	ignorecolors= ["chartreuse","peachpuff","paleturquoise","palegreen","olive","slategray","slategrey","lavenderblush","lemonchiffon","lightblue","lightcyan","lightgoldenrodyellow","lavender","khaki","seashell","gainsboro","burlywood","darkgrey","darkgray","palegoldenrod","linen","silver","darkkhaki","lightpink","mediumpurple","lightgreen","thistle","papayawhip","preachpuff","pink","tan","powderBlue","navajowhite","moccasin","mistyrose","lightgrey","lightgray","grey","gray","aquamarine","cadetblue","white","wheat","aqua","whitesmoke","mintcream","oldlace","black","snow","aliceblue","azure","cornsilk","beige","bisque","blanchedalmond","antiquewhite","lightyellow","lightsteelblue","ghostwhite","floralwhite","ivory","honeydew"];
+	
 	if use_bw:
 		return( "black", gIndex )
 
 	if gIndex < len(matplotcolors):
 		grpcolor = matplotcolors[gIndex]
-		if grpcolor in ["white","wheat","aqua","whitesmoke","mintcream","oldlace","black","snow","aliceblue","azure","cornsilk","beige","bisque","blanchedalmond","antiquewhite","lightyellow","lightsteelblue","ghostwhite","floralwhite","ivory","honeydew"]:#mediumpurple","mediumvioletred","mediumseagreen"]:
-			if fwd_rev == "reverse":
-				gIndex = gIndex -1
-			else:
-				gIndex = gIndex +1
-
+		if fwd_rev == "reverse":
+			gIndex = gIndex -1
+		else:
+			gIndex = gIndex +1
+		if grpcolor in ignorecolors:#mediumpurple","mediumvioletred","mediumseagreen"]:
 			return getColor(gIndex,fwd_rev)
 		else:
-			if fwd_rev == "reverse":
-				gIndex = gIndex -1
-			else:
-				gIndex = gIndex +1
 			return(grpcolor,gIndex)
 	else:
 		return getColor(0)
 
-def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 18, showGroups = True,specific_group = []):
+def jsontoPng(modelpath, outputfile, ranksep = 0.1, hasLegend = True, fontsize = 18, showGroups = True,specific_group = []):
 	group_no = 0;
-	#groupmap = dict()
 	groupmap = OrderedDict()
 	global startstringdigit
 	startstringdigit= OrderedDict()
@@ -173,12 +171,8 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	f_graph = open(outputfilename+".dot", "w")
 	f_graph.write("digraph mygraph {\n\trank=TB;\n")
 	if ranksep > 0.0:
-		f_graph.write("\tranksep={};\n".format( ranksep ))
-	#f_graph.write("ratio = 1.0\n")
-	#f_graph.write("ratio = \"fill\"\n")
-	#f_graph.write("size = \"4,4!\"\n")
-	#f_graph.write("node [shape=box, penwidth=2, height=0.01, width=0.01 ];")
-	f_graph.write("node [shape=box, penwidth=2,fontsize={}];".format( fontsize ) )
+		f_graph.write("\trank = same, ranksep={};\n".format( ranksep ))
+	f_graph.write("node [shape=box, penwidth=2,width=0, height=0, margin=0,fontsize={}];".format( fontsize ) )
 	displayGroups = []
 	if specific_group == None:
 		displayGroups = modelpath.grpInfo
@@ -189,17 +183,17 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 			displayGroups = modelpath.grpInfo
 		
 	
-	specielist,node_color = writeSpecies(modelpath,groupmap)
-	funclist = writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, displayGroups, fontsize = fontsize - 2)
-	edgelist,node_color,lig_exist,kmod_exist,inhibit_exist = writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups,fontsize = fontsize - 2)
+	specieslist,node_color,spelist = writeSpecies(modelpath,groupmap)
+	funclist,func_edgelist = writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight, displayGroups, fontsize = fontsize - 2)
+	reaclist,edgelist,node_color,lig_exist,kmod_exist,inhibit_exist = writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups,fontsize = fontsize - 2)
 	nIndex = len(matplotcolors)-1
-	
+	species = (list(set(spelist) - set(reaclist+funclist)))
 	if showGroups:
 		for grp,items in groupmap.items():
 			if grp in displayGroups:
 				color,nIndex = getColor(nIndex,"reverse")
 				s = s + "\nsubgraph cluster_"+str(group_no)+"i\n{"
-				s = s+"\nsubgraph cluster_"+str(group_no)+"\n{"+"\n"+"label=\""+grp+"\";\npenwidth=4; margin=10.0\ncolor=\""+color+"\";\nfontsize="+str(fontsize + 2)+";\n"
+				s = s+"\nsubgraph cluster_"+str(group_no)+"\n{"+"\n"+"label=\""+grp+"\";\npenwidth=4; margin=10.0\ncolor=\""+color+"\";\nfontsize="+str(fontsize + 2)+";\n"			
 				sps = ""
 				items = list(unique(items))
 				for sp in items:
@@ -212,15 +206,22 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	
 	f_graph.write(s)
 	f_graph.write(edgelist)
-	f_graph.write(funclist)
+	f_graph.write(func_edgelist)
 	nodeIndex = 0
 	for k,vl in groupmap.items():
 		if k in displayGroups:
 			for l in vl:
 				if l in node_color:
 					v = node_color[l]
-					v,nodeIndex = getColor(nodeIndex)
-					f_graph.write("\n"+l+"[color=\""+v+"\"]")
+					#v,nodeIndex = getColor(nodeIndex)
+					if k in specieslist:
+						concValue = [x['value'] for x in specieslist[k] if x['name'] == l][0]
+					if l in species:
+						f_graph.write("\n"+l+"[color=\""+v+"\",shape=Mrecord, width=0, height=0, margin=0.1,tooltip = \"concInit = "+str(float("{:.5f}".format(concValue)))+
+						"\"]")
+					else:		
+						f_graph.write("\n"+l+"[color=\""+v+"\", width=0, height=0, margin=0.1, tooltip = \"concInit = "+str(float("{:.5f}".format(concValue)))+
+						"\"]")
 		
 	for p,q in startstringdigit.items():
 		if p in displayGroups:
@@ -230,11 +231,11 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	if hasLegend:
 		f_graph.write("\nnode [shape=plaintext]\nsubgraph cluster_01 {\n\tlabel = \"Legend\";\n\t{ rank=sink;\n\tkey [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n\t<tr><td align=\"right\" port=\"i1\">Input</td></tr>\n")
 		if lig_exist:
-			f_graph.write("\t<tr><td align=\"right\" port=\"i2\">Activate</td></tr>\n")
+			f_graph.write("\t<tr><td align=\"right\" port=\"i2\">ligand-Act</td></tr>\n")
 		if kmod_exist:
 			f_graph.write("\t<tr><td align=\"right\" port=\"i3\">Modifier</td></tr>\n")
 		if inhibit_exist:
-			f_graph.write("\t<tr><td align=\"right\" port=\"i4\">Inhibit</td></tr>\n")
+			f_graph.write("\t<tr><td align=\"right\" port=\"i4\">ligand-Inh</td></tr>\n")
 		f_graph.write("\t</table>>]\n\tkey2 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n\t<tr><td port=\"i1\">&nbsp;</td></tr>\n")
 		if lig_exist:
 			f_graph.write("\t<tr><td port=\"i2\">&nbsp;</td></tr>\n")
@@ -256,33 +257,39 @@ def jsontoPng(modelpath, outputfile, ranksep = 0, hasLegend = True, fontsize = 1
 	
 	command = "dot -T"+ outputfiletype + " "+ outputfilename+".dot -o "+outputfile
 	call([command], shell=True)
-
+	print("file written ",outputfile)
+	return(outputfile)
 def writeSpecies(modelpath, groupmap):
 	# getting all the species
-	specieslist = ""
-	mIndex = 0 
+	specieslist = {}
+	mIndex = 0
+	spelist = []
 	for molname, mol in ( modelpath.molInfo.items() ):
 		checkdigit(startstringdigit,mol.grp,molname)
 		molname = checkdigitEqu(startstringdigit,mol.grp,molname)
 		if molname not in node_color:
 			spe_color,mIndex = getColor(mIndex)
 			node_color[molname] = spe_color
-
+		spelist.append(molname)
 		if mol.grp in groupmap:
 			groupmap[mol.grp].append(molname)
+			specieslist[mol.grp].append({"name":molname,"value":mol.concInit})
 		else:
 			groupmap[mol.grp] = [molname]
-	return specieslist,node_color
+			specieslist[mol.grp] = [{"name":molname,"value":mol.concInit}]
+	return specieslist,node_color,spelist
 		
 def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups, fontsize = 16):
 	equation_pluse = 0
 	equation_sigma = 0
 	edgelist = ""
+	funclist = []
 	for e,t in modelpath.eqnInfo.items():
 		checkdigit(startstringdigit,t.grp,t.name)
 		t.name = checkdigitEqu(startstringdigit,t.grp,t.name)
 		allpluse = True
 		mathSym = []
+		funclist.append(t.name)
 		for i in t.eqnStr:
 			if i in ["*","-","/","+"]:
 				mathSym.append(i)
@@ -295,13 +302,13 @@ def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 			plusesize = "pluse"+str(equation_pluse)
 			equation_pluse+=1
 			if t.grp in displayGroups:
-				edgelist = edgelist+"\n"+plusesize+"[label=\"+\",shape=circle]"
+				edgelist = edgelist+"\n"+plusesize+"[label=\"+\",shape=circle,width=0, height=0, margin=0]"
 			groupmap[t.grp].append(plusesize)
 		else:
 			plusesize = "sigma"+str(equation_sigma)
 			equation_sigma+=1
 			if t.grp in displayGroups:
-				edgelist = edgelist+"\n"+plusesize+"[label=<&Sigma;>,shape=circle]"
+				edgelist = edgelist+"\n"+plusesize+"[label=<&Sigma;>,shape=circle,width=0, height=0, margin=0]"
 			groupmap[t.grp].append(plusesize)
 		for tsubs in unique(t.subs):
 			input_color = node_color[tsubs]
@@ -313,7 +320,7 @@ def writeFunc(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 				edgelist = edgelist+"]"
 		if t.grp in displayGroups:
 			edgelist = edgelist+"\n"+plusesize+"->"+t.name+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+"]"
-	return edgelist
+	return funclist,edgelist
 
 def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroups,fontsize = 16):
 	edgelist = ""
@@ -322,9 +329,11 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 	kmod_exist = False
 	inhibit_exist = False
 	sIndex = 0
+	reaclist = []
 	for reacname, reac in ( modelpath.reacInfo.items() ):
 		checkdigit(startstringdigit,reac.grp,reacname)
 		reacname = checkdigitEqu(startstringdigit,reac.grp,reacname)
+		reaclist.append(reacname)
 		if reac.grp in displayGroups:
 			if reac.grp in groupmap:
 				groupmap[reac.grp].append(reacname)
@@ -335,15 +344,16 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 			prd = reacname
 			for sub in sublistU:
 				newsub = sub
-				if sub in startstringdigit:
-					newsub = startstringdigit[sub]
+				if reac.grp in startstringdigit:
+					t = startstringdigit[reac.grp]
+					if newsub in t:
+						newsub = t[newsub]
 				''' if string starting with number, then replace with s+string'''
 				if newsub in node_color:
 					reaction_color = node_color[newsub]
 				else:
 					reaction_color,sIndex = getColor(sIndex)
 					node_color[newsub] = reaction_color
-
 				checkdigit(startstringdigit,reac.grp,sub)
 				if (reac.inhibit == 1.0 and sublistU.index(sub) == len(sublistU)-1 ) :
 					c = countX(sublist,sub)
@@ -351,14 +361,14 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 					inhibit_exist = True
 					''' inhibit  ligant activator tee  '''
 					if c >1:
-						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
+						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " minlen = 1 arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
 					else:
-						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
+						edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = tee weight = "+str(edge_weight)+ " minlen = 1 arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
 				
 				elif len(sublistU) == 3 and sublist.index(sub) == 1:
 					''' kmod Modulator odiamond '''
 					sub = checkdigitEqu(startstringdigit,reac.grp,sub)
-					edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = odiamond weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
+					edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead = odiamond weight = "+str(edge_weight)+ " minlen = 1 arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"
 					kmod_exist = True
 				else:
 					if sublist.index(sub) >= 1:
@@ -367,22 +377,25 @@ def writeReac(modelpath,groupmap,f_graph,edge_arrowsize,edge_weight,displayGroup
 						sub = checkdigitEqu(startstringdigit,reac.grp,sub)
 						''' ligand vee '''
 						if c >1:
-							edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
+							edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " minlen = 1 arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\" label=\" "+str(c)+"\" fontsize="+str(fontsize)+ "]"
 						else:
-							edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"				
+							edgelist = edgelist+"\n"+sub+"->"+prd+"[arrowhead=vee weight = "+str(edge_weight)+ " minlen = 1 arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+"\"]"				
 					else:
 						if  sublist.index(sub) == 0:
 							''' input '''
 							sub = checkdigitEqu(startstringdigit,reac.grp,sub)
-							edgelist = edgelist +"\n"+sub+"->"+prd+"[arrowhead=normal weight = "+str(edge_weight)+ " arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+":"+reaction_color+"\" style=bold]"				
-	return(edgelist,node_color,lig_exist,kmod_exist,inhibit_exist)
+							edgelist = edgelist +"\n"+sub+"->"+prd+"[arrowhead=normal weight = "+str(edge_weight)+ " minlen = 1 arrowsize = "+str(edge_arrowsize)+" color=\""+reaction_color+":"+reaction_color+"\" style=bold]"				
+	return(reaclist,edgelist,node_color,lig_exist,kmod_exist,inhibit_exist)
 		
 
 def file_choices(choices,fname,iotype):
 	ext = (os.path.splitext(fname)[1][1:]).lower()
-	if iotype == "outputfile":
-		if ext not in choices:
+	if iotype == "imagetype":
+		if fname not in choices:
 			parser.error("Requires output filetype {}".format(choices))
+	# elif iotype == "outputfile":
+	# 	if ext not in choices:
+	# 		parser.error("Requires output filetype {}".format(choices))
 	else:
 		if ext != "json":
 			parser.error("Requires HillTau file in JSON format ")
@@ -394,7 +407,9 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser( description = 'This program generates a reaction diagram for a HillTau model. It converts the specified HillTau file in JSON format, to the dot format. The dot file is further converted to an image in png/svg format\n')
 	parser.add_argument('model',type=lambda s:file_choices(("json"),s,"input"), help='Required: filename of model, in JSON format.')
 	#parser.add_argument( 'model', type = str, help='Required: filename of model, in JSON format.')
-	parser.add_argument( '-o', '--output', type=lambda out:file_choices(("png","svg"),out,"outputfile"), help='Optional: writes out the png model into named file. default takes json filename')
+	parser.add_argument( '-o', '--output', type = str,help='Optional: writes out the png model into named file. default takes json filename')
+	
+	parser.add_argument( '-T', '--type', type=lambda imagetype:file_choices(("png","svg"),imagetype,"imagetype"), help='Optional: writes out the image in png or svg is format, default takes png format')
 	parser.add_argument( '-r', '--ranksep', type=float, default = 0, help='Optional: set rank separation (vertical spacing) in output.')
 	parser.add_argument( '-fs', '--fontsize', type=float, default = 18, help='Optional: set font size for node labels.')
 	parser.add_argument( '-nl', '--no_legend', action='store_true', help='Optional: Turns off generation of legend')
@@ -403,17 +418,54 @@ if __name__ == "__main__":
 	parser.add_argument('-sg', '--specific_group', help='Optional: Specfiy group names for display,delimited groupname seprated by comma.',type=lambda s:s.split(","))
 	args = parser.parse_args()
 	use_bw = args.bw
+	if args.type != None:
+		exttype = args.type
 
 	if args.output == None:
 		dirpath = os.path.dirname(args.model)
 		basename = os.path.basename(args.model)
+		if args.type == None:
+			exttype = "png"
 		if dirpath:
-			outputfile = os.path.dirname(args.model)+"/"+os.path.splitext(os.path.basename(args.model))[0]+".png"	
+			outputfile = os.path.dirname(args.model)+"/"+os.path.splitext(os.path.basename(args.model))[0]+"."+exttype	
 		else:
-			outputfile = os.path.splitext(args.model)[0]+".png"
+			outputfile = os.path.splitext(args.model)[0]+"."+exttype
 	else:
-		outputfile = args.output
-
+		basename = os.path.basename(args.model)
+		basestr = os.path.splitext(basename)
+		outst = args.output
+		dirpath = os.path.dirname(args.output)
+		basename1 = os.path.basename(args.output)
+		if basename1 != "":
+			st = os.path.splitext(basename1)
+			if len(st[0]) == 1:	
+				if not st[0][-1].isalpha():
+					outputfilename = st[0][0:len(st[0])-1]
+					if len(outputfilename) ==0:
+						outputfilename = basestr[0]
+				else:
+					outputfilename = st[0]
+			else:
+				outputfilename = st[0]
+			#type	
+			if len( st ) > 1:
+				if (st[1][1:] != "" and st[1][1:] in ('png','svg')):
+					if args.type == None:
+						exttype = st[1][1:]
+				else:
+					if st[1][1:] == "":
+						exttype = "png"
+		else:
+			outputfilename = os.path.splitext(os.path.basename(args.model))[0]
+			if args.type == None:
+				exttype = "png"
+		if dirpath != '/':	
+			outputfile = dirpath+"/"+outputfilename+"."+exttype
+		else:
+			outputfile = stt+"."+exttype
+	
 	jsonDict = loadHillTau( args.model )
 	modelpath = parseModel( jsonDict )
+	print("outputfile ",outputfile)
 	jsontoPng(modelpath, outputfile, ranksep = args.ranksep, hasLegend = not args.no_legend, fontsize = args.fontsize, showGroups = not args.no_groups,specific_group = args.specific_group )
+	#return (outputfile)
