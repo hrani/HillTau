@@ -22,6 +22,8 @@
  *                  compare their runtimes.
  * Author:          Upinder S. Bhalla
  * E-mail:          bhalla@ncbs.res.in
+ * Warning:        This example depends on pycotools which works for python3.6 using 
+  		     Python 3.7 or 3.8 will not work at this time due to dependency issues of pycotools for the latest version of python
  ********************************************************************/
 '''
 from __future__ import print_function
@@ -53,12 +55,12 @@ modelList = [
     ["kholodenko.g", "kholodenko.json", "kholodenko.xml", 1e5],
     ["bcm.g", "bcm.json", "bcm.xml", 1e5],
     ["acc92_fixed.g", "syn_prot_composite.json", "acc92_fixed.xml", 1e4],
-    ["autsim_v2_17Jul2020.g", "aut6.json", "autsim_v1_17Jul2020.xml", 1e3],
+    ["autsim_v1_17Jul2020.g", "aut6.json", "autsim_v1_17Jul2020.xml", 1e3],
 ]
 
 def runSim( chem, ht, cps, runtime ):
     print( "-------------------------------------> RUNNING: ", chem )
-    modelId = moose.loadModel( "KKIT_MODELS/" + chem, 'model', 'gsl' )
+    modelId = moose.loadModel( "../KKIT_MODELS/" + chem, 'model', 'gsl' )
     for i in range( 0, 20 ):
         moose.setClock( i, plotDt )
 
@@ -88,7 +90,7 @@ def runSim( chem, ht, cps, runtime ):
         htTime2 += time.time() - t0
 
     # Now do the COPASI thing.
-    shutil.copy( "SBML_MODELS/" + cps, "temp.sbml" )
+    shutil.copy( "../SBML_MODELS/" + cps, "temp.sbml" )
 
     # It croaks if you just give the file name. Have to use ./temp.sbml
     smodel = pycotools3.model.ImportSBML( "./temp.sbml" )
