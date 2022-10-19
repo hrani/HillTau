@@ -81,8 +81,9 @@ def jsontoDb(modelfilename,modelpath, glob_constant,outputfile):#modelpath, outp
 	outputfilename = st[0]
 	dirname, basename = os.path.split(outputfile)
 	accessname  = (os.path.splitext(basename))[0]
-	pngoutput = dirname+"/png/"+accessname+".png"
-	command = "python3 ~/AutSim/HillTau/htgraph.py "+ modelfilename +" -o " +pngoutput
+	pngoutput = dirname+"/"+accessname+".png"
+	pdirectory = os.getcwd()
+	command = "python3 " +pdirectory+"/htgraph.py "+ modelfilename +" -o " +pngoutput
 	filename =call([command], shell=True)
 	if len( st ) > 1: 
 		outputfiletype = st[1][1:]
@@ -98,6 +99,7 @@ def jsontoDb(modelfilename,modelpath, glob_constant,outputfile):#modelpath, outp
 	notes= ""
 	modeltype = "HT"
 	model_validation = " "
+	source = " "
 	f_doqcs.write("USE doqcs\n");
 	f_doqcs.write("INSERT INTO accession(\n");
 	f_doqcs.write( "\tname,accesstype,entrydate,transcriber,developer,\n");
@@ -159,7 +161,7 @@ def jsontoDb(modelfilename,modelpath, glob_constant,outputfile):#modelpath, outp
 		f_doqcs.write( "@accessno,'" + grp + "',\"\");");
 		f_doqcs.write("\nSELECT @pathwayno := last_insert_id();\n");
 
-		pngoutput = dirname+"/png/"+accessname+"_"+grp+".png"
+		pngoutput = dirname+"/"+accessname+"_"+grp+".png"
 		command = "python3 ~/AutSim/HillTau/htgraph.py "+ modelfilename +" -sg "+grp+" -o " +pngoutput
 		print(command)
 		call([command], shell=True)
@@ -398,11 +400,12 @@ if __name__ == "__main__":
 
 	if args.output == None:
 		dirpath = os.path.dirname(args.model)
-		basename = os.path.basename(args.model)
-	
+		basename1 = os.path.basename(args.model)
+	else:
+		dirpath = os.path.dirname(args.output)
+		basename1 = os.path.basename(args.output)
 	exttype = "sql"
-	dirpath = os.path.dirname(args.output)
-	basename1 = os.path.basename(args.output)
+	
 	if basename1 != "":
 		st = os.path.splitext(basename1)
 		if len(st[0]) == 1:	
