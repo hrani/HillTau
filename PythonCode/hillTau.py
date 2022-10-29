@@ -290,8 +290,8 @@ class Model():
             # This is used when we are doing a steady-state calc. Since
             # HillTau does this anyway, we jump fast. Only issue arises
             # if there are feedback processes. So to be conservative, 
-            # do 10 steps. 
-            self.innerAdvance( runtime, runtime / 10.0 )
+            # do 50 steps. 
+            self.innerAdvance( runtime, runtime / 50.0 )
         else:
             newdt = min( self.dt, self.internalDt )
             adv = max( self.minTau * 10.0, self.dt )

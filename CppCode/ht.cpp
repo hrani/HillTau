@@ -397,7 +397,8 @@ void Model::advance( double runtime, int settle )
 {
 	if (runtime < 10e-6) return;
 	if (settle) {
-		double newdt = runtime / 10.0;
+		/// double newdt = runtime / 10.0;
+		double newdt = runtime / 50.0;
 		innerAdvance( runtime, newdt );
 	} else {
 		double newdt = min( dt, internalDt);
