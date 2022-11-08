@@ -150,7 +150,7 @@ double ReacInfo::getKA() const {
 double ReacInfo::eval( Model* model, double dt ) const
 {
 	if ( isBuffered ) {
-		return model->conc[ prdIndex ];
+		return model->concInit[ prdIndex ];
 	}
 	double orig = model->conc[ prdIndex ] - baseline;
 	double delta = concInf( model->conc ) - orig;

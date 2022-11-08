@@ -179,7 +179,7 @@ class ReacInfo():
 
     def eval( self, model, dt ):
         if self.isBuffered:
-            return model.conc[self.prdIndex]
+            return model.concInit[self.prdIndex]
         orig = model.conc[self.prdIndex] - self.baseline
         delta = self.concInf( model.conc ) - orig
         if delta >= 0:
