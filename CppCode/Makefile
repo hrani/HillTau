@@ -1,7 +1,7 @@
 PYTHON = $(shell which python3 )
 
 ifeq (, $(shell which python3 ))
-  $(error "PYTHON=$(PYTHON) not found in $(PATH)")
+  $(error "PYTHON=$PYTHON not found in $(PATH)")
 endif
 
 PYTHON_VERSION_MIN=3.5
@@ -10,7 +10,8 @@ PYTHON_VERSION=$(shell $(PYTHON) -c 'import sys; print("%d.%d"% sys.version_info
 PYTHON_VERSION_OK=$(shell $(PYTHON) -c 'import sys;\
   print(int(float("%d.%d"% sys.version_info[0:2]) >= $(PYTHON_VERSION_MIN)))' )
 
-ifeq ($(PYTHON_VERSION_OK),0)
+
+ifeq ($(PYTHON_VERSION_OK),1)
   $(error "Need python $(PYTHON_VERSION) >= $(PYTHON_VERSION_MIN)")
 endif
 
