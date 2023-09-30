@@ -31,8 +31,10 @@
 								"tau": { "type": ["number", "string"] },
 								"tau2": { "type": ["number", "string"] },
 								"inhibit": { "type": ["number", "string"] },
-								"baseline": { "type": ["number", "string"] },
-								"gain": { "type": ["number", "string"] }
+								"baseline": { "type": ["number", "string"]},
+								"gain": { "type": ["number", "string"] },
+								"isBuffered":{"type": ["number", "string"]},
+								"concInit": { "type": ["number", "string"] }
 							},
 							"required": ["subs", "KA", "tau"],
 							"additionalProperties": false

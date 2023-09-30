@@ -16,20 +16,22 @@ PYBIND11_MAKE_OPAQUE(std::map<string, EqnInfo>);
 
 PYBIND11_MODULE(ht, m) {
 	py::bind_vector<std::vector<double>>(m, "VectorDouble");
+
+	/////////////////////////////////////////////////////////////////////
     py::class_<MolInfo>(m, "MolInfo")
         .def( 
-			py::init<const std::string &, const std::string &, double, int>(), py::arg("name"), py::arg("grp"), py::arg("concInit") = -1.0, py::arg("isSub") = 0 )
+			py::init<const std::string &, const std::string &, int, double, Model* >(), py::arg("name"), py::arg("grp"), py::arg("isSub") = 0, py::arg( "concInit" ), py::arg( "model" ) )
 		.def_readwrite("name", &MolInfo::name)
 		.def_readwrite("grp", &MolInfo::grp)
 		.def_readwrite("order", &MolInfo::order)
-		.def_readwrite("concInit", &MolInfo::concInit)
+		.def_property("concInit", &MolInfo::getConcInit, &MolInfo::setConcInit)
 		.def_readonly("isSub", &MolInfo::isSub)
 		.def_readwrite("index", &MolInfo::index);
 
 	/////////////////////////////////////////////////////////////////////
     py::class_<ReacInfo>(m, "ReacInfo")
         .def( 
-			py::init<const std::string &, const std::string &, const vector< string >&, const map< string, double>&, const map< string, MolInfo*>&>())
+			py::init<const std::string &, const std::string &, const vector< string >&, const map< string, double>&, Model* >() )
 		.def_readwrite("name", &ReacInfo::name)
 		.def_readwrite("grp", &ReacInfo::grp)
 		.def_property("KA", &ReacInfo::getKA, &ReacInfo::setKA)
@@ -44,23 +46,26 @@ PYBIND11_MODULE(ht, m) {
 		.def_readwrite("prdIndex", &ReacInfo::prdIndex)
 		.def_readwrite("kh", &ReacInfo::kh)
 		.def_readonly("HillCoeff", &ReacInfo::HillCoeff)
+		.def_property("concInit", &ReacInfo::getConcInit, &ReacInfo::setConcInit)
 		.def_readwrite("isBuffered", &ReacInfo::isBuffered)
 		.def_readonly("subs", &ReacInfo::subs)
 		.def( "eval", &ReacInfo::eval, "Evaluator for Reacs" )
-		.def( "getReacOrder", &ReacInfo::getReacOrder, "Returns 1+largest of substrate mol orders, and updates ReacMol accordingly.", py::arg("model") )
+		.def( "getReacOrder", &ReacInfo::getReacOrder, "Returns 1+largest of substrate mol orders, and updates ReacMol accordingly." )
 		.def( "concInf", &ReacInfo::concInf, "Computes steady-state value of reaction output" );
 
 	/////////////////////////////////////////////////////////////////////
     py::class_<EqnInfo>(m, "EqnInfo")
         .def( 
-			py::init<const std::string &, const std::string &, const std::string&, const vector< string >&, const map< string, MolInfo* >&, vector< double >&>())
+			py::init<const std::string &, const std::string &, const std::string&, const vector< string >&, Model* >() )
 		.def_readwrite("name", &EqnInfo::name)
 		.def_readwrite("grp", &EqnInfo::grp)
 		.def_readwrite("eqnStr", &EqnInfo::eqnStr)
+		.def_property("concInit", &EqnInfo::getConcInit, &EqnInfo::setConcInit)
+		.def_readwrite("isBuffered", &EqnInfo::isBuffered)
 		.def_readonly("subs", &EqnInfo::subs)
 		.def( "eval", &EqnInfo::eval, "Evaluator for Eqns" );
-	/////////////////////////////////////////////////////////////////////
 
+	/////////////////////////////////////////////////////////////////////
     py::class_<Model>(m, "Model")
         .def(py::init())
 		.def_readwrite("molInfo", &Model::molInfo)

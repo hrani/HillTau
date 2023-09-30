@@ -212,12 +212,16 @@ class EqnInfo():
         self.eqnStr = eqnStr
         self.subs = subs
         self.consts = cs
+        self.isBuffered = 1 if eqnStr == "isBuffered" else 0
 
     def parseEqn( self, molInfo, globalConsts ):
         # Replace mol names with lookup index in molecule array, and func names with np.funcName.
         self.index = molInfo[self.name].index
         molInfo[ self.name ].grp = self.grp # Put output molecule in same grp as eqn
         self.newEq = self.eqnStr
+        #print( "parasing eqn ", self.name, self.eqnStr )
+        if self.isBuffered:
+            return
         for name in self.consts:
             val = globalConsts.get( name )
             if val:
@@ -234,11 +238,24 @@ class EqnInfo():
 
         for func in mathFns:
             self.newEq = self.newEq.replace( func, "np.{}".format( func ) )
+        #print( "Parsed eqn for {} = {}".format( self.name, self.newEq ) )
 
 
-    def eval( self, m ):
-        m[self.index] = ret = eval( self.newEq )
+    def eval( self, model ):
+        if self.isBuffered:
+            model.conc[self.index] = ret = model.concInit[self.index]
+            print( "{} Is buffered @ {}".format( self.name, ret ) )
+        else:
+            #print( "{} Not buffered @ {}".format( self.name, self.newEq ) )
+            m = model.conc
+            model.conc[self.index] = ret = eval( self.newEq )
+            if model.step == 90:
+                #print( "{} Not buffered @ {:.5f}".format( self.name, ret ) )
+                print( "{} curr time {:.5f}".format( model.step, model.currentTime) )
         return ret
+
+def onnit( obj, ll ):
+    return obj in ll or obj.grp in ll
 
 class Model():
     def __init__( self, jsonDict ):
@@ -318,7 +335,8 @@ class Model():
                 for r in ar:
                     r.eval( self, newdt )
             for val in self.sortedEqnInfo:
-                val.eval( self.conc )
+                #print( "Val = {}".format( val.name ) )
+                val.eval( self )
 
             # Here we decide if we insert data into the plots.
             if np.floor( (self.currentTime + t + newdt)/ self.dt ) > self.step:
@@ -361,6 +379,12 @@ class Model():
         # shallow copy.
         # So if you change values in conc, they will change in concInit
         self.conc = np.array( self.concInit )
+        # For debugging:
+        """
+        for val in self.sortedEqnInfo:
+            print( "{} initconc = {:.5f} later = {}".format( val.name, self.concInit[val.index], self.conc[val.index] ) )
+        """
+        # end debug
         del self.plotvec[:]
         self.plotvec.append( np.array( self.conc ) )
 
@@ -373,26 +397,33 @@ class Model():
         if len( saveList ) > 0:
             for seq in range( numSeq ):
                 sri = self.sortedReacInfo[seq]
+                #print( seq, len( sri ) )
                 for ri in sri:
                     if len( deleteList ) > 0 :
-                        if ri in saveList and not (ri in deleteList):
+                        if onnit( ri, saveList ) and not onnit(ri, deleteList):
                             newsri[seq].append( ri )
-                    elif ri in saveList:
+                    elif onnit( ri, saveList ):
                         newsri[seq].append( ri )
             self.sortedReacInfo = newsri
             if len( deleteList ) > 0:
-                self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if key in saveList and not key in deleteList ]
+                self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if onnit( val, saveList ) and not onnit( val, deleteList ) ]
             else: 
-                self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if key in saveList ]
+                self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if onnit( val, saveList ) ]
         elif len( deleteList ) > 0: # Nothing on saveList
             for seq in range( numSeq ):
                 sri = self.sortedReacInfo[seq]
                 for ri in sri:
-                    if not ( ri in deleteList ):
+                    if not onnit( ri, deleteList ):
                         newsri[seq].append( ri )
             self.sortedReacInfo = newsri
-            self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if not key in deleteList ]
+            self.sortedEqnInfo = [ val for key, val in self.eqnInfo.items() if not onnit( val, ideleteList ) ]
         # If both lists are empty, retain original sortedReacInfo and sortedEqnInfo.
+        print( "LEN PKC = ", len( self.sortedReacInfo ), len( self.sortedEqnInfo ) )
+        """
+        for idx, seq in enumerate( self.sortedReacInfo ):
+            for ii, rr in enumerate( seq ):
+                print( idx, ii, rr.name )
+        """
 
 def getQuantityScale( jsonDict ): 
     qu = jsonDict.get( "QuantityUnits" )
@@ -461,6 +492,8 @@ def extractSubs( expr, consts ):
     molname = ""
     lastch = ''
     mols = []
+    if expr == "isBuffered":
+        return [], []
     for ch in expr:
         if isInMol:
             if ch.isalnum() or ch == '_':
@@ -536,6 +569,7 @@ def parseModel( jsonDict ):
     for grpname, grp in model.jsonDict['Groups'].items():
         if "Eqns" in grp:
             for lhs, expr in grp["Eqns"].items():
+                subs, cs = extractSubs( expr, model.consts )
                 model.makeMol( lhs, grpname )
                 #model.molInfo[lhs] = MolInfo( lhs, grpname)
                 model.eqnInfo[lhs] = EqnInfo( lhs, grpname, expr, subs, cs )
@@ -628,6 +662,7 @@ def sortReacs( model ):
     for name, reac in model.reacInfo.items():
         order = model.molInfo[name].order
         model.sortedReacInfo[order].append( reac )
+        #print( "adding Reac {} at order {}".format( reac.name, order ) )
     model.sortedEqnInfo = [ val for val in model.eqnInfo.values() ]
 
 def writeOutput( fname, model, plotvec, x ):

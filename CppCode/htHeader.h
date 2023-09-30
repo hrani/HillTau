@@ -12,14 +12,20 @@ class Model;
 class MolInfo
 {
 	public:
-			MolInfo( const string& name, const string& grp, double concInit, int isSub );
+			MolInfo( const string& name, const string& grp, int isSub, double concInit, Model* model );
 			string name;
 			string grp;
 			int order;
-			double concInit;
 			unsigned int index;
 			int isSub;
 			bool explicitConcInit;
+			void setConcInit( double );
+			double getConcInit() const;
+			void reconcileConcInit();
+			void privateSetConcInit( double );
+	private:
+			double concInit;	// Only used during reconcileConcInit()
+			Model* model;
 };	
 
 class ReacInfo
@@ -28,7 +34,7 @@ class ReacInfo
 			ReacInfo( const string& name, const string& grp, 
 			const vector< string >& subs, 
 			const map< string, double>& reacObj, 
-			const map< string, MolInfo* >& molInfo );
+			Model* model );
 			string name;
 			string grp;
 			double KA;
@@ -48,32 +54,38 @@ class ReacInfo
 			vector< string > subs;
 
 			double concInf( const vector< double >& conc ) const;
-			double eval( Model* model, double dt ) const;
+			double eval( double dt ) const;
 			double getKA() const;
 			void setKA( double val );
-			int getReacOrder( const Model& model );
+			double getConcInit() const;
+			void setConcInit( double val );
+			int getReacOrder() const;
 
 	private:
 			unsigned int hillIndex;
 			unsigned int reagIndex;
 			unsigned int modIndex;
 			bool oneSub;
-
+			Model* model;
 };
 
 class EqnInfo
 {
 	public:
-			EqnInfo( const string& name, const string& grp, const string& eqnStr, const vector< string >& eqnSubs, const map< string, MolInfo* >& molInfo, vector< double >& conc );
+			EqnInfo( const string& name, const string& grp, const string& eqnStr, const vector< string >& eqnSubs, Model* model_ );
 			string name;
 			string grp;
 			string eqnStr;
-			double eval( vector<double>& conc ) const;
-			static vector< unsigned int > findMolTokens(const string& eqn);
+			int isBuffered;
 			vector< string > subs;
+			double eval() const;
+			static vector< unsigned int > findMolTokens(const string& eqn);
+			double getConcInit() const;
+			void setConcInit( double val );
 	private:
 			// Stuff for parser
 			unsigned int molIndex;
+			Model* model;
 			exprtk::symbol_table<double> symbol_table;
 			exprtk::expression<double> expression;
 };

@@ -297,7 +297,7 @@ def sortReacs( model ):
             if prevOrder >= 0:
                 numOrdered += 1
             else:
-                order = reac.getReacOrder( model )
+                order = reac.getReacOrder()
                 # As a side effect it assigns model.molInfo[reacname].order
                 if order >= 0:
                     maxOrder = max( maxOrder, order )
