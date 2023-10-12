@@ -46,7 +46,6 @@ MolInfo::MolInfo( const std::string& name_, const std::string& grp_, int isSub_ 
 };
 
 void MolInfo::setConcInit( double val ) {
-	cout << "SET MOL CONCININT " << val << endl;
 	model->concInit[ index ] = val;
 }
 
@@ -162,7 +161,7 @@ ReacInfo::ReacInfo( const string& name_, const string& grp_,
 	auto ci = reacObj.find( "concInit" );
 	if ( ci != reacObj.end() ) {
 		setConcInit( ci->second );
-		cout << "Initialize CONCINIT1 = " << getConcInit()  << ", buff = " << isBuffered << endl;
+		// cout << "Initialize CONCINIT1 = " << getConcInit()  << ", buff = " << isBuffered << endl;
 	}
 }
 
@@ -180,7 +179,6 @@ void ReacInfo::setConcInit( double val ) {
 	model->concInit[ prdIndex ] = val;
 	if ( isBuffered )
 		model->conc[ prdIndex ] = val;
-	cout << "SET CONCINIT = " << val  << endl;
 }
 
 double ReacInfo::getConcInit() const {
