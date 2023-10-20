@@ -550,7 +550,7 @@ void Model::reinit()
 	for (auto r = sortedReacInfo.begin(); r != sortedReacInfo.end(); r++) {
 		for (auto ri = r->begin(); ri != r->end(); ri++) {
 			if ( (*ri)->isBuffered ) { // ConcInit is used unchanged.
-				cout << "concinit for " << (*ri)->name << " in reinit = " << (*ri)->getConcInit() << endl;
+				// cout << "concinit for " << (*ri)->name << " in reinit = " << (*ri)->getConcInit() << endl;
 				continue;
 			}
 			minTau = min( min( minTau, (*ri)->tau ), (*ri)->tau2 );
